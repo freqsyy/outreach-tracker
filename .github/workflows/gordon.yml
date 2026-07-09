@@ -1,0 +1,62 @@
+name: Gordon Outreach
+
+on:
+  schedule:
+    # Каждый час. Минуты рандомим через `RANDOM_OFFSET`, см. ниже.
+    - cron: '7 * * * *'
+  workflow_dispatch: {}   # ручной запуск кнопкой
+
+permissions:
+  contents: write        # нужно, чтобы коммитить базу/лог обратно
+
+concurrency:
+  group: gordon-run
+  cancel-in-progress: false
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      # --- Собрать .env из секрета DOTENV (весь файл одной строкой) ---
+      # Секрет НЕ попадает в лог (GitHub маскирует secrets). Файл в .gitignore.
+      - name: Build .env from secret
+        env:
+          DOTENV: ${{ secrets.DOTENV }}
+        run: |
+          printf '%s\n' "$DOTENV" > .env
+          echo ".env created ($(wc -l < .env) lines)"
+
+      # --- Разброс времени внутри часа (анти-спам, как на ПК) ---
+      - name: Random in-hour delay
+        run: |
+          DELAY=$(( RANDOM % 1800 ))   # 0..30 мин
+          echo "Waiting ${DELAY}s before run"
+          sleep "$DELAY"
+
+      - name: Run Gordon
+        run: python gordon.py
+
+      - name: Emit status.json
+        run: python gordon_status.py
+
+      - name: Commit state back
+        run: |
+          git config user.name "gordon-bot"
+          git config user.email "gordon@users.noreply.github.com"
+          git add outreach.db gordon_run.log status.json gordon_send_state.json
+          # коммитим только если есть изменения
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+          else
+            git commit -m "gordon: auto-run $(date -u +%Y-%m-%dT%H:%M:%SZ)"
+            git push
+          fi

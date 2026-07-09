@@ -1,0 +1,175 @@
+[2026-07-09 21:01:37] [GORDON] GORDON: nachalo cikla.
+[2026-07-09 21:01:37] [GORDON] === ZAPUSK agent_parser.py ===
+[2026-07-09 21:01:37] [PARSER] Start parser. Url v spiske: 0
+[2026-07-09 21:01:37] [PARSER] Parser zavershen.
+[2026-07-09 21:01:37] [AGENT_PARSER] [2026-07-09 21:01:37] [PARSER] Start parser. Url v spiske: 0
+[2026-07-09 21:01:37] [AGENT_PARSER] [2026-07-09 21:01:37] [PARSER] Parser zavershen.
+[2026-07-09 21:01:37] [GORDON] === ZAPUSK agent_sender.py ===
+[2026-07-09 21:01:37] [SENDER] Net akkauntov v .env (ACCOUNT_1_EMAIL / ACCOUNT_1_PASS ...). Otpravka ostanovlena.
+[2026-07-09 21:01:37] [PITFALL] Grabel zafiksirovan: Sender: pusto v .env
+[2026-07-09 21:01:37] [AGENT_SENDER] [2026-07-09 21:01:37] [SENDER] Net akkauntov v .env (ACCOUNT_1_EMAIL / ACCOUNT_1_PASS ...). Otpravka ostanovlena.
+[2026-07-09 21:01:37] [AGENT_SENDER] [2026-07-09 21:01:37] [PITFALL] Grabel zafiksirovan: Sender: pusto v .env
+[2026-07-09 21:01:37] [GORDON] === ZAPUSK agent_recorder.py ===
+[2026-07-09 21:01:37] [RECORDER] Net ruchnyh otvetov (gordon_responses.txt pust).
+[2026-07-09 21:01:37] [AGENT_RECORDER] [2026-07-09 21:01:37] [RECORDER] Net ruchnyh otvetov (gordon_responses.txt pust).
+[2026-07-09 21:01:37] [GORDON] GORDON: cikl zavershen.
+[2026-07-09 21:02:32] [PARSER] Start parser. Url v spiske: 1
+[2026-07-09 21:02:32] [PARSER] Pusto / nedostupno: https://burvin.by/
+[2026-07-09 21:02:32] [PARSER] Parser zavershen.
+[2026-07-09 21:03:14] [PARSER] Start parser. Url v spiske: 1
+[2026-07-09 21:03:15] [PARSER] [!] Site already exists: https://burvin.by/
+[2026-07-09 21:03:15] [PARSER]    ID: 1
+[2026-07-09 21:03:15] [PARSER] Parser zavershen.
+[2026-07-09 21:22:44] [TEST] SMTP test OK dlya romanjeyaleksej@gmail.com
+[2026-07-09 21:24:34] [TEST] SMTP test OK dlya romanjeyaleksej@gmail.com
+[2026-07-09 21:26:17] [TEST] SMTP test OK dlya romanjeyaleksej@gmail.com
+[2026-07-09 21:28:56] [TEST] SMTP test OK dlya romanjeyaleksej@gmail.com
+[2026-07-09 21:29:25] [SENDER] Тест кириллицы: Нащёл ваш проект burvin.by — письмо готово
+[2026-07-09 21:31:47] [GORDON] GORDON: nachalo cikla.
+[2026-07-09 21:31:47] [GORDON] === ZAPUSK agent_parser.py ===
+[2026-07-09 21:31:47] [PARSER] Start parser. Url v spiske: 1
+[2026-07-09 21:31:47] [PARSER] [!] Site already exists: https://burvin.by/
+[2026-07-09 21:31:47] [PARSER]    ID: 1
+[2026-07-09 21:31:47] [PARSER] Parser zavershen.
+[2026-07-09 21:31:47] [GORDON] === ZAPUSK agent_sender.py ===
+[2026-07-09 21:31:47] [GORDON] === ZAPUSK agent_recorder.py ===
+[2026-07-09 21:31:47] [RECORDER] Net ruchnyh otvetov (gordon_responses.txt pust).
+[2026-07-09 21:31:47] [GORDON] GORDON: cikl zavershen.
+[2026-07-09 21:31:59] [GORDON] GORDON: nachalo cikla.
+[2026-07-09 21:31:59] [GORDON] === ZAPUSK agent_parser.py ===
+[2026-07-09 21:31:59] [PARSER] Start parser. Url v spiske: 1
+[2026-07-09 21:32:00] [PARSER] [!] Site already exists: https://burvin.by/
+[2026-07-09 21:32:00] [PARSER]    ID: 1
+[2026-07-09 21:32:00] [PARSER] Parser zavershen.
+[2026-07-09 21:32:00] [GORDON] === ZAPUSK agent_sender.py ===
+[2026-07-09 21:32:00] [SENDER] Otpravka #1 -> mail@burvin.by cherez romanjeyaleksej@gmail.com
+[2026-07-09 21:32:02] [SENDER] OK otpravleno #1
+[2026-07-09 21:32:37] [SENDER] Limit: dnevnoj 1/1 ili za progon 1/1
+[2026-07-09 21:32:37] [SENDER] Sender zavershen. Otpravleno v etom progone: 1
+[2026-07-09 21:32:37] [GORDON] === ZAPUSK agent_recorder.py ===
+[2026-07-09 21:32:38] [RECORDER] Net ruchnyh otvetov (gordon_responses.txt pust).
+[2026-07-09 21:32:38] [GORDON] GORDON: cikl zavershen.
+[2026-07-09 21:35:38] [TEST] SMTP test OK dlya romanjeyaleksej@gmail.com
+[2026-07-09 21:37:13] [TEST] SMTP test OK dlya romanjeyaleksej@gmail.com
+[2026-07-09 21:37:50] [TEST] SMTP test OK dlya romanjeyaleksej@gmail.com
+[2026-07-09 21:44:20] [GORDON] GORDON: nachalo cikla.
+[2026-07-09 21:44:20] [GORDON] === ZAPUSK agent_parser.py ===
+[2026-07-09 21:44:20] [PARSER] Start parser. Url v spiske: 1
+[2026-07-09 21:44:20] [PARSER] [!] Site already exists: https://burvin.by/
+[2026-07-09 21:44:20] [PARSER]    ID: 1
+[2026-07-09 21:44:20] [PARSER] Parser zavershen.
+[2026-07-09 21:44:20] [GORDON] === ZAPUSK agent_sender.py ===
+[2026-07-09 21:44:20] [SENDER] Otpravka #2 -> shop@mylo.by cherez ZAMENI_NA@GMAIL.COM
+[2026-07-09 21:44:22] [SENDER] OSHIBKA otpravki #2: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-493f2a2e499sm8284215e9.0 - gsmtp')
+[2026-07-09 21:44:22] [PITFALL] Grabel zafiksirovan: Sender: oshibka SMTP
+[2026-07-09 21:44:57] [SENDER] Otpravka #3 -> coffeekofta@gmail.com cherez ZAMENI_NA@GMAIL.COM
+[2026-07-09 21:44:59] [SENDER] OSHIBKA otpravki #3: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-47aa0f2186bsm51900455f8f.36 - gsmtp')
+[2026-07-09 21:45:34] [SENDER] Otpravka #4 -> contacts@bubblz.by cherez ZAMENI_NA@GMAIL.COM
+[2026-07-09 21:45:36] [SENDER] OSHIBKA otpravki #4: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-493f2dd8376sm207665e9.2 - gsmtp')
+[2026-07-09 21:46:11] [SENDER] Otpravka #5 -> manager@kavachay.by cherez ZAMENI_NA@GMAIL.COM
+[2026-07-09 21:46:13] [SENDER] OSHIBKA otpravki #5: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials ffacd0b85a97d-47a9de1d8f1sm54065816f8f.3 - gsmtp')
+[2026-07-09 21:46:48] [SENDER] Otpravka #6 -> info@roast.by cherez ZAMENI_NA@GMAIL.COM
+[2026-07-09 21:46:49] [SENDER] OSHIBKA otpravki #6: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-493eb6ccaf1sm143189475e9.2 - gsmtp')
+[2026-07-09 21:47:24] [SENDER] Otpravka #7 -> chayeved@yandex.by cherez ZAMENI_NA@GMAIL.COM
+[2026-07-09 21:47:26] [SENDER] OSHIBKA otpravki #7: (535, b'5.7.8 Username and Password not accepted. For more information, go to\n5.7.8  https://support.google.com/mail/?p=BadCredentials 5b1f17b1804b1-493f2e0f165sm50645e9.0 - gsmtp')
+[2026-07-09 21:47:40] [GORDON] === ZAPUSK agent_recorder.py ===
+[2026-07-09 21:47:40] [RECORDER] Net ruchnyh otvetov (gordon_responses.txt pust).
+[2026-07-09 21:49:04] [GORDON] GORDON: nachalo cikla.
+[2026-07-09 21:49:04] [GORDON] === ZAPUSK agent_parser.py ===
+[2026-07-09 21:49:04] [PARSER] Start parser. Url v spiske: 1
+[2026-07-09 21:49:04] [PARSER] [!] Site already exists: https://burvin.by/
+[2026-07-09 21:49:04] [PARSER]    ID: 1
+[2026-07-09 21:49:04] [PARSER] Parser zavershen.
+[2026-07-09 21:49:04] [GORDON] === ZAPUSK agent_sender.py ===
+[2026-07-09 21:49:04] [SENDER] Otpravka #2 -> shop@mylo.by cherez romanjeyaleksej@gmail.com
+[2026-07-09 21:49:08] [SENDER] OK otpravleno #2
+[2026-07-09 21:49:43] [SENDER] Otpravka #3 -> coffeekofta@gmail.com cherez romanjeyaleksej@gmail.com
+[2026-07-09 21:49:45] [SENDER] OK otpravleno #3
+[2026-07-09 21:50:20] [SENDER] Otpravka #4 -> contacts@bubblz.by cherez romanjeyaleksej@gmail.com
+[2026-07-09 21:50:24] [SENDER] OK otpravleno #4
+[2026-07-09 21:50:59] [SENDER] Otpravka #5 -> manager@kavachay.by cherez romanjeyaleksej@gmail.com
+[2026-07-09 21:51:02] [SENDER] OK otpravleno #5
+[2026-07-09 21:51:37] [SENDER] Otpravka #6 -> info@roast.by cherez romanjeyaleksej@gmail.com
+[2026-07-09 21:51:40] [SENDER] OK otpravleno #6
+[2026-07-09 21:52:15] [SENDER] Limit: dnevnoj 6/12 ili za progon 5/5
+[2026-07-09 21:52:15] [SENDER] Sender zavershen. Otpravleno v etom progone: 5
+[2026-07-09 21:52:15] [GORDON] === ZAPUSK agent_recorder.py ===
+[2026-07-09 21:52:15] [RECORDER] Net ruchnyh otvetov (gordon_responses.txt pust).
+[2026-07-09 21:52:15] [GORDON] GORDON: cikl zavershen.
+[2026-07-09 22:00:01] [GORDON] GORDON: nachalo cikla.
+[2026-07-09 22:00:01] [GORDON] === ZAPUSK agent_parser.py ===
+[2026-07-09 22:00:01] [PARSER] Start parser. Url v spiske: 1
+[2026-07-09 22:00:02] [PARSER] [!] Site already exists: https://burvin.by/
+[2026-07-09 22:00:02] [PARSER]    ID: 1
+[2026-07-09 22:00:02] [PARSER] Parser zavershen.
+[2026-07-09 22:00:02] [GORDON] === ZAPUSK agent_sender.py ===
+[2026-07-09 22:00:02] [SENDER] Vne okna otpravki (9-21). Propuskaem.
+[2026-07-09 22:00:02] [GORDON] === ZAPUSK agent_recorder.py ===
+[2026-07-09 22:00:02] [RECORDER] Net ruchnyh otvetov (gordon_responses.txt pust).
+[2026-07-09 22:00:02] [GORDON] GORDON: cikl zavershen.
+[2026-07-09 22:11:26] [GORDON] GORDON: nachalo cikla.
+[2026-07-09 22:11:26] [GORDON] === ZAPUSK agent_parser.py ===
+[2026-07-09 22:11:26] [PARSER] Start parser. Url v spiske: 1
+[2026-07-09 22:11:26] [PARSER] [!] Site already exists: https://burvin.by/
+[2026-07-09 22:11:26] [PARSER]    ID: 1
+[2026-07-09 22:11:26] [PARSER] Parser zavershen.
+[2026-07-09 22:11:26] [GORDON] === ZAPUSK agent_sender.py ===
+[2026-07-09 22:11:26] [SENDER] Otpravka #7 -> chayeved@yandex.by cherez romanjeyaleksej@gmail.com
+[2026-07-09 22:11:29] [SENDER] OK otpravleno #7
+[2026-07-09 22:12:04] [SENDER] Otpravka #8 -> savonta@list.ru cherez romanjeyaleksej@gmail.com
+[2026-07-09 22:12:07] [SENDER] OK otpravleno #8
+[2026-07-09 22:12:42] [SENDER] Limit: dnevnoj 8/10 ili za progon 2/2
+[2026-07-09 22:12:42] [SENDER] Sender zavershen. Otpravleno v etom progone: 2
+[2026-07-09 22:12:42] [GORDON] === ZAPUSK agent_recorder.py ===
+[2026-07-09 22:12:42] [RECORDER] Net ruchnyh otvetov (gordon_responses.txt pust).
+[2026-07-09 22:12:42] [GORDON] GORDON: cikl zavershen.
+[2026-07-09 22:56:38] [BURST] === AKK 2 (ndndnsnsndnsn2@gmail.com) : 3 pisma ===
+[2026-07-09 22:56:40] [BURST] OK #10 -> espireo.by@gmail.com cherez ndndnsnsndnsn2@gmail.com
+[2026-07-09 22:56:40] [BURST] Pauza 453s
+[2026-07-09 23:00:01] [GORDON] GORDON: nachalo cikla.
+[2026-07-09 23:00:01] [GORDON] === ZAPUSK agent_parser.py ===
+[2026-07-09 23:00:01] [PARSER] Start parser. Url v spiske: 1
+[2026-07-09 23:00:02] [PARSER] [!] Site already exists: https://burvin.by/
+[2026-07-09 23:00:02] [PARSER]    ID: 1
+[2026-07-09 23:00:02] [PARSER] Parser zavershen.
+[2026-07-09 23:00:02] [GORDON] === ZAPUSK agent_sender.py ===
+[2026-07-09 23:00:02] [SENDER] Vne okna otpravki (9-21). Propuskaem.
+[2026-07-09 23:00:02] [GORDON] === ZAPUSK agent_recorder.py ===
+[2026-07-09 23:00:02] [RECORDER] Net ruchnyh otvetov (gordon_responses.txt pust).
+[2026-07-09 23:00:02] [RECORDER] IMAP- pollling VKLYUCHEN. Proveryaem vhodyaschie otvetov...
+[2026-07-09 23:00:25] [RECORDER] IMAP: novyh otvetov net.
+[2026-07-09 23:00:25] [GORDON] GORDON: cikl zavershen.
+[2026-07-09 23:04:16] [BURST] OK #11 -> info@in-vogue.by cherez ndndnsnsndnsn2@gmail.com
+[2026-07-09 23:04:16] [BURST] Pauza 132s
+[2026-07-09 23:06:30] [BURST] OK #12 -> info@nebo.by cherez ndndnsnsndnsn2@gmail.com
+[2026-07-09 23:06:38] [BURST] === AKK 3 (qhqh0457@gmail.com) : 3 pisma ===
+[2026-07-09 23:06:41] [BURST] OK #13 -> info@abby.by cherez qhqh0457@gmail.com
+[2026-07-09 23:06:41] [BURST] Pauza 136s
+[2026-07-09 23:08:54] [BURST] OK #14 -> info@proff-remont.by cherez akk2 (ndndnsnsndnsn2@gmail.com)
+[2026-07-09 23:08:54] [BURST] Pauza 197s
+[2026-07-09 23:12:13] [BURST] OK #15 -> shodosok76@gmail.com cherez akk3 (qhqh0457@gmail.com)
+[2026-07-09 23:12:13] [BURST] Pauza 185s
+[2026-07-09 23:15:21] [BURST] OK #16 -> sergei1988pet@yandex.by cherez akk4 (ususysjq@gmail.com)
+[2026-07-09 23:15:21] [BURST] Pauza 215s
+[2026-07-09 23:19:00] [BURST] OK #17 -> info@goldenhome.by cherez akk5 (jzkapkfyshbefhuagkdwksdjs@gmail.com)
+[2026-07-09 23:19:00] [BURST] Pauza 213s
+[2026-07-09 23:22:38] [BURST] OK #18 -> rovnorovno.by@gmail.com cherez akk2 (ndndnsnsndnsn2@gmail.com)
+[2026-07-09 23:22:38] [BURST] Pauza 208s
+[2026-07-09 23:26:11] [BURST] OK #19 -> info@studiya-remonta.by cherez akk3 (qhqh0457@gmail.com)
+[2026-07-09 23:26:11] [BURST] Pauza 215s
+[2026-07-09 23:29:55] [BURST] OK #21 -> 7pravil@gmail.com cherez akk4 (ususysjq@gmail.com)
+[2026-07-09 23:29:55] [BURST] Pauza 212s
+[2026-07-09 23:31:42] [BOUNCE] Bauns bez sovpadeniya (v ndndnsnsndnsn2@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@proff-remont.by', 'ndndnsnsndnsn2@gmail.com']
+[2026-07-09 23:31:47] [BOUNCE] Bauns bez sovpadeniya (v ndndnsnsndnsn2@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@proff-remont.by', 'ndndnsnsndnsn2@gmail.com']
+[2026-07-09 23:32:26] [BOUNCE] Bounce-check: novyh baunsov net. Vse adresa zhivy.
+[2026-07-09 23:33:35] [BURST] OK #22 -> info@dostavka24.by cherez akk5 (jzkapkfyshbefhuagkdwksdjs@gmail.com)
+[2026-07-09 23:33:35] [BURST] Pauza 191s
+[2026-07-09 23:37:01] [BURST] OK #23 -> info@vozim.by cherez akk2 (ndndnsnsndnsn2@gmail.com)
+[2026-07-09 23:37:01] [BURST] Pauza 207s
+[2026-07-09 23:40:39] [BURST] OK #24 -> info@shopbyshop.by cherez akk3 (qhqh0457@gmail.com)
+[2026-07-09 23:40:39] [BURST] Pauza 200s
+[2026-07-09 23:44:13] [BURST] OK #25 -> zakaz@kurer24.by cherez akk4 (ususysjq@gmail.com)
+[2026-07-09 23:44:13] [BURST] Pauza 202s
+[2026-07-09 23:47:48] [BURST] OK #26 -> info@xytki.by cherez akk5 (jzkapkfyshbefhuagkdwksdjs@gmail.com)
+[2026-07-09 23:47:48] [BURST] Pauza 171s
+[2026-07-09 23:50:38] [BURST] BURST gotovo. Otpravleno v etom progone: 12

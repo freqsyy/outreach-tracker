@@ -1,0 +1,17 @@
+# Секреты - никогда не в git
+.env
+
+# Python
+__pycache__/
+*.pyc
+
+# Скрап-дампы агента-парсера (тестовые HTML)
+*.html
+
+# Старые артефакты (не в публичный репо)
+Наша_армия_агентов_итог.txt
+gordon_bot.log
+nul
+
+# ВАЖНО: outreach.db, gordon_send_state.json, gordon_run.log, status.json
+# НЕ игнорируются - GitHub Actions коммитит их обратно в репо.
