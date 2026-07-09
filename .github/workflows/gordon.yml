@@ -35,12 +35,8 @@ jobs:
           printf '%s\n' "$DOTENV" > .env
           echo ".env created ($(wc -l < .env) lines)"
 
-      # --- Разброс времени внутри часа (анти-спам, как на ПК) ---
-      - name: Random in-hour delay
-        run: |
-          DELAY=$(( RANDOM % 1800 ))   # 0..30 мин
-          echo "Waiting ${DELAY}s before run"
-          sleep "$DELAY"
+      # Разброс времени внутри часа делает сам agent_sender (RANDOM_START_SEC),
+      # здесь ждать не надо - иначе subprocess падает по таймауту.
 
       - name: Run Gordon
         run: python gordon.py

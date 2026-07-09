@@ -24,7 +24,7 @@ def run_agent(script):
     gc.log(f"=== ZAPUSK {script} ===", "GORDON")
     try:
         res = subprocess.run([sys.executable, script],
-                             capture_output=True, text=True, timeout=300,
+                             capture_output=True, text=True, timeout=1200,
                              cwd=HERE)
         # суб-агенты сами пишут в gordon_run.log через gc.log;
         # здесь только дублируем в консоль, чтобы не плодить дубли в файле
