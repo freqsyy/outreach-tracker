@@ -173,3 +173,24 @@
 [2026-07-09 23:47:48] [BURST] OK #26 -> info@xytki.by cherez akk5 (jzkapkfyshbefhuagkdwksdjs@gmail.com)
 [2026-07-09 23:47:48] [BURST] Pauza 171s
 [2026-07-09 23:50:38] [BURST] BURST gotovo. Otpravleno v etom progone: 12
+[2026-07-09 21:01:55] [GORDON] GORDON: nachalo cikla.
+[2026-07-09 21:01:55] [GORDON] === ZAPUSK agent_parser.py ===
+[2026-07-09 21:01:55] [PARSER] Start parser. Url v spiske: 1
+[2026-07-09 21:01:58] [PARSER] [!] Site already exists: https://burvin.by/
+[2026-07-09 21:01:58] [PARSER]    ID: 1
+[2026-07-09 21:01:58] [PARSER] Parser zavershen.
+[2026-07-09 21:01:58] [GORDON] === ZAPUSK agent_sender.py ===
+[2026-07-09 21:01:58] [SENDER] Limity: dnevnoj=42 (warmup=5), za progon=2
+[2026-07-09 21:01:58] [SENDER] Sluchaynyy start cherez 596s
+[2026-07-09 21:06:58] [GORDON] AGENT UPEL V OSHIBKU agent_sender.py: Command '['/opt/hostedtoolcache/Python/3.11.15/x64/bin/python', 'agent_sender.py']' timed out after 300 seconds
+[2026-07-09 21:06:58] [GORDON] === ZAPUSK agent_recorder.py ===
+[2026-07-09 21:06:58] [RECORDER] Net ruchnyh otvetov (gordon_responses.txt pust).
+[2026-07-09 21:06:58] [RECORDER] IMAP- pollling VKLYUCHEN. Proveryaem vhodyaschie otvetov...
+[2026-07-09 21:07:10] [RECORDER] IMAP: novyh otvetov net.
+[2026-07-09 21:07:10] [GORDON] === ZAPUSK agent_bounce.py ===
+[2026-07-09 21:07:18] [BOUNCE] Bauns bez sovpadeniya (v ndndnsnsndnsn2@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@proff-remont.by', 'ndndnsnsndnsn2@gmail.com']
+[2026-07-09 21:07:21] [BOUNCE] Bauns bez sovpadeniya (v ndndnsnsndnsn2@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@proff-remont.by', 'ndndnsnsndnsn2@gmail.com']
+[2026-07-09 21:07:24] [BOUNCE] BAUNS po #24 (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@shopbyshop.by']
+[2026-07-09 21:07:35] [BOUNCE] Site #24 -> BOUNCED (mertvyy adres)
+[2026-07-09 21:07:35] [BOUNCE] Bounce-check zavershen. Pomacheno mertvyh: [24]
+[2026-07-09 21:07:35] [GORDON] GORDON: cikl zavershen.
