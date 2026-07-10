@@ -299,3 +299,32 @@
 [2026-07-10 12:23:04] [BOUNCE] Site #24 -> BOUNCED (mertvyy adres)
 [2026-07-10 12:23:04] [BOUNCE] Bounce-check zavershen. Pomacheno mertvyh: [14, 24]
 [2026-07-10 12:23:04] [GORDON] GORDON: cikl zavershen.
+[2026-07-10 15:38:57] [GORDON] GORDON: nachalo cikla.
+[2026-07-10 15:38:57] [GORDON] === ZAPUSK agent_parser.py ===
+[2026-07-10 15:38:57] [PARSER] Start parser. Url v spiske: 1
+[2026-07-10 15:39:00] [PARSER] [!] Site already exists: https://burvin.by/
+[2026-07-10 15:39:00] [PARSER]    ID: 1
+[2026-07-10 15:39:00] [PARSER] Parser zavershen.
+[2026-07-10 15:39:00] [GORDON] === ZAPUSK agent_sender.py ===
+[2026-07-10 15:39:01] [SENDER] Limity: dnevnoj=42 (warmup=5), za progon=2
+[2026-07-10 15:39:01] [SENDER] Sluchaynyy start cherez 112s
+[2026-07-10 15:40:53] [SENDER] Otpravka #28 -> info@korex.by cherez qhqh0457@gmail.com
+[2026-07-10 15:40:54] [SENDER] OK otpravleno #28
+[2026-07-10 15:40:54] [SENDER] Pauza do sleduyuschego pisma: 724s (sluchayno)
+[2026-07-10 15:53:06] [SENDER] Otpravka #29 -> info@veter-ok.by cherez ususysjq@gmail.com
+[2026-07-10 15:53:07] [SENDER] OK otpravleno #29
+[2026-07-10 15:53:15] [SENDER] Limit: dnevnoj 4/42 ili za progon 2/2
+[2026-07-10 15:53:15] [SENDER] Sender zavershen. Otpravleno v etom progone: 2
+[2026-07-10 15:53:15] [GORDON] === ZAPUSK agent_recorder.py ===
+[2026-07-10 15:53:15] [RECORDER] Net ruchnyh otvetov (gordon_responses.txt pust).
+[2026-07-10 15:53:15] [RECORDER] IMAP- pollling VKLYUCHEN. Proveryaem vhodyaschie otvetov...
+[2026-07-10 15:53:19] [RECORDER] NAYDEN otvet po #5: '=?UTF-8?B?UmU6INCi0LXRgdGC0LjRgNC+0LLQsNC90LjQtSDRgdCw0LnRgtCwIGthdmFj?=
+ =?UTF-8?B?aGF5LmJ5?='
+[2026-07-10 15:53:19] [GORDON] === ZAPUSK agent_bounce.py ===
+[2026-07-10 15:53:24] [BOUNCE] BAUNS po #14 (v romanjeyaleksej@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@proff-remont.by']
+[2026-07-10 15:53:27] [BOUNCE] BAUNS po #14 (v ndndnsnsndnsn2@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@proff-remont.by']
+[2026-07-10 15:53:33] [BOUNCE] BAUNS po #24 (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@shopbyshop.by']
+[2026-07-10 15:53:42] [BOUNCE] Site #14 -> BOUNCED (mertvyy adres)
+[2026-07-10 15:53:42] [BOUNCE] Site #24 -> BOUNCED (mertvyy adres)
+[2026-07-10 15:53:42] [BOUNCE] Bounce-check zavershen. Pomacheno mertvyh: [14, 24]
+[2026-07-10 15:53:42] [GORDON] GORDON: cikl zavershen.
