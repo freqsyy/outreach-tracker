@@ -14,22 +14,35 @@ agent_scout.py - АГЕНТ 0 (Скаут). Ищет МОЛОДЫЕ сайты, 
      отсекаем - там на нас не посмотрят.
   3. Контакт: как у парсера - curl страницы, вытаскиваем email + Telegram.
 
-Прошедшие фильтр -> track.py add с тегами "auto-scout, fresh" и source "scout".
+Прошедшие фильтр -> track.py add с тегами "auto-scout, fresh", source "scout".
+ПО УМОЛЧАНИЮ статус = "review" (НЕ готов к рассылке) - авто-найденные контакты
+требуют ручного подтверждения (track.py edit --status pending), чтобы не слать
+спам по адресам, вытащенным из чужих сайтов. Ключ --auto-approve ставит сразу
+"pending" - только если Назар точно хочет.
+
+БЕЗОПАСНОСТЬ: URL сайтов и домены берутся из публичного дампа (недоверенный ввод).
+  - SSRF: перед фетчем URL проверяется (scheme http/https, без учётных данных,
+    хост не loopback/private/link-local). Редиректы не следуются (-L убран).
+  - домен валидируется строгой регуляркой до встраивания в RDAP-URL.
 
 Запуск:
   python agent_scout.py                 # прогнать за последние 14 дней, залить в БД
   python agent_scout.py --days 30       # за месяц
   python agent_scout.py --dry-run       # только показать кандидатов, ничего не добавлять
   python agent_scout.py --max-age-days 365 --limit 15
+  python agent_scout.py --auto-approve  # сразу pending (ГОТОВО К РАССЫЛКЕ, осторожно!)
 """
 
 import argparse
+import ipaddress
 import json
 import os
 import re
+import socket
 import subprocess
 import sys
 from datetime import datetime, timedelta
+from urllib.parse import urlsplit
 
 import gordon_common as gc
 
@@ -49,10 +62,49 @@ UP_RE = re.compile(r"\*\*Upvotes:\*\*\s*(\d+)")
 
 VERISIGN_TLDS = {"com", "net", "org", "info", "biz", "name"}
 
+# строгий паттерн зарегистрированного домена (без '/', '@', '?', '#', учётных данных)
+DOMAIN_RE = re.compile(r"^(?=.{1,253}$)([a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?\.)+[a-z]{2,24}$")
+
 # мусорные/placeholder email, которые парсер ловит из описаний и документации
 JUNK_EMAIL_DOMAINS = {"example.com", "example.org", "example.net", "dev.io",
                       "test.com", "localhost", "invalid"}
 JUNK_EMAIL_LOCAL = {"you", "your", "test", "noreply", "no-reply", "admin@example"}
+
+
+def is_safe_domain(domain):
+    """Строгая валидация домена перед встраиванием в RDAP-URL (фикс SSRF #2)."""
+    return bool(DOMAIN_RE.match(domain or ""))
+
+
+def url_is_safe(url):
+    """Проверяет, что URL можно фетчить: только http/https, публичный хост,
+    без учётных данных, не loopback/private/link-local (фикс SSRF #1)."""
+    try:
+        p = urlsplit(url)
+    except Exception:
+        return False, "bad url"
+    if p.scheme not in ("http", "https"):
+        return False, f"schema {p.scheme}"
+    if p.username or p.password:
+        return False, "credentials in url"
+    host = (p.hostname or "").strip().lower()
+    if not host:
+        return False, "no host"
+    # домен (не IP) — ок
+    if not re.match(r"^\d{1,3}(\.\d{1,3}){3}$", host) and ":" not in host:
+        return True, ""
+    # IP — отбиваем приватные/loopback/link-local
+    try:
+        ip = ipaddress.ip_address(host)
+    except ValueError:
+        # хост с портом или IPv6 без скобок — перестраховка
+        try:
+            ip = ipaddress.ip_address(host.split(":")[0])
+        except ValueError:
+            return True, ""  # не смогли разобрать как IP, пусть доменная ветка решает
+    if ip.is_private or ip.is_loopback or ip.is_link_local or ip.is_reserved or ip.is_multicast:
+        return False, f"blocked ip {ip}"
+    return True, ""
 
 
 def is_junk_email(email):
@@ -82,16 +134,26 @@ def pick_contact(emails, site_domain):
 
 
 def fetch_text(url, timeout=25):
-    """curl -> текст (как в парсере). Возвращает '' при ошибке."""
+    """curl -> текст (как в парсере). БЕЗ -L: редиректы не следуем (фикс SSRF #1,
+    чтобы финальный URL не уводил на внутренний адрес). Возвращает '' при ошибке."""
     try:
         out = subprocess.run(
-            ["curl", "-s", "-m", str(timeout), "-L", url],
+            ["curl", "-s", "-m", str(timeout), url],
             capture_output=True, timeout=timeout + 5,
         )
         return out.stdout.decode("utf-8", errors="ignore") if out.stdout else ""
     except Exception as e:
         gc.log(f"curl fail {url}: {e}", "SCOUT")
         return ""
+
+
+def fetch_site(url, timeout=20):
+    """Фетч страницы сайта ТОЛЬКО после SSRF-проверки (фикс SSRF #1)."""
+    ok, why = url_is_safe(url)
+    if not ok:
+        gc.log(f"SSRF BLOCK: {url} ({why})", "SCOUT")
+        return ""
+    return fetch_text(url, timeout)
 
 
 def fetch_json(url, timeout=20):
@@ -134,7 +196,11 @@ def parse_daily(md):
 
 
 def domain_age_days(domain):
-    """Возраст домена в днях через RDAP. None = не удалось узнать."""
+    """Возраст домена в днях через RDAP. None = не удалось узнать.
+    Фикс SSRF #2: домен строго валидируем до встраивания в URL."""
+    if not is_safe_domain(domain):
+        gc.log(f"SSRF BLOCK domain: {domain!r}", "SCOUT")
+        return None
     tld = domain.split(".")[-1].lower()
     urls = []
     if tld in VERISIGN_TLDS:
@@ -162,10 +228,17 @@ def domain_age_days(domain):
     return None
 
 
-def add_to_db(url, email, tg, notes):
+def add_to_db(url, email, tg, notes, status):
+    """status='review' по умолчанию (фикс #3): авто-найденные контакты НЕ готовы
+    к рассылке, требуют ручного подтверждения. Перевод в 'pending' - только вручную
+    через track.py edit --status pending ИЛИ ключом --auto-approve."""
+    if status == "pending":  # явный аппрув от пользователя
+        st = "pending"
+    else:
+        st = "review"
     cmd = [sys.executable, TRACK, "add", url,
            "--email", email, "--tags", "auto-scout,fresh",
-           "--source", "scout", "--notes", notes]
+           "--source", "scout", "--status", st, "--notes", notes]
     if tg:
         cmd += ["--tg", tg]
     try:
@@ -177,8 +250,8 @@ def add_to_db(url, email, tg, notes):
         gc.log(f"add fail {url}: {e}", "SCOUT")
 
 
-def run(days, max_age, max_upvotes, limit, dry):
-    gc.log(f"=== SCOUT start: days={days} max_age={max_age} max_up={max_upvotes} limit={limit} dry={dry} ===", "SCOUT")
+def run(days, max_age, max_upvotes, limit, dry, auto_approve):
+    gc.log(f"=== SCOUT start: days={days} max_age={max_age} max_up={max_upvotes} limit={limit} dry={dry} auto_approve={auto_approve} ===", "SCOUT")
     files = list_daily_files(days)
     seen = set()
     added = 0
@@ -209,10 +282,10 @@ def run(days, max_age, max_upvotes, limit, dry):
                 gc.log(f"PROPUSCHEN (old {age}d): {domain}", "SCOUT")
                 continue
 
-            # достаём контакты
-            html = fetch_text(site_url, timeout=20)
+            # достаём контакты (только после SSRF-проверки URL)
+            html = fetch_site(site_url, timeout=20)
             if not html:
-                gc.log(f"NEDOSTUPNO: {domain}", "SCOUT")
+                gc.log(f"NEDOSTUPNO/BLOCK: {domain}", "SCOUT")
                 continue
             emails, tgs = gc.extract_contacts(html)
             if not emails:
@@ -231,7 +304,8 @@ def run(days, max_age, max_upvotes, limit, dry):
                 continue
 
             tg = " ".join(tgs) if tgs else None
-            add_to_db(site_url, email, tg, notes)
+            # по умолчанию status='review' (защита от спама), см. fix #3
+            add_to_db(site_url, email, tg, notes, "pending" if auto_approve else "review")
             added += 1
             if added >= limit:
                 break
@@ -248,8 +322,11 @@ def main():
     ap.add_argument("--max-upvotes", type=int, default=DEFAULT_MAX_UPVOTES)
     ap.add_argument("--limit", type=int, default=DEFAULT_LIMIT)
     ap.add_argument("--dry-run", action="store_true", help="только показать кандидатов")
+    ap.add_argument("--auto-approve", action="store_true",
+                    help="добавлять сразу как pending (ГОТОВО К РАССЫЛКЕ). "
+                         "БЕЗ ключа скаут ставит статус 'review' - нужно ручное подтверждение")
     args = ap.parse_args()
-    run(args.days, args.max_age_days, args.max_upvotes, args.limit, args.dry_run)
+    run(args.days, args.max_age_days, args.max_upvotes, args.limit, args.dry_run, args.auto_approve)
 
 
 if __name__ == "__main__":

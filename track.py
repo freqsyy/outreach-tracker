@@ -42,7 +42,7 @@ def init_db():
             email TEXT,
             telegram TEXT,
             status TEXT DEFAULT 'pending'
-                CHECK(status IN ('pending','sent','replied','hired','rejected','bounced')),
+                CHECK(status IN ('pending','sent','replied','hired','rejected','bounced','review')),
             tags TEXT,
             source TEXT DEFAULT 'manual',
             notes TEXT,
@@ -56,13 +56,19 @@ def init_db():
 
 
 def migrate_bounced_status():
-    """Старые БД созданы с CHECK без 'bounced'. Добавляем статус,
-    пересоздав таблицу и перенеся данные. Идемпотентно."""
+    """Старые БД созданы с CHECK без 'bounced'/'review'. Добавляем статусы,
+    пересоздав таблицу и перенеся данные. Идемпотентно.
+
+    Детект старого CHECK - по тексту CREATE-запроса (надёжнее, чем UPDATE id=-1,
+    который при 0 затронутых строк не проверяет constraint и ложно проходит)."""
     conn = get_conn()
     try:
-        # проверка: разрешён ли статус 'bounced' текущим CHECK
-        conn.execute("UPDATE sites SET status='bounced' WHERE id=-1")
-    except sqlite3.IntegrityError:
+        row = conn.execute(
+            "SELECT sql FROM sqlite_master WHERE type='table' AND name='sites'"
+        ).fetchone()
+        sql = (row[0] or "") if row else ""
+        if "review" in sql and "bounced" in sql:
+            return  # уже актуальный CHECK - миграция не нужна
         # CHECK старый — пересоздаём таблицу
         conn.execute("ALTER TABLE sites RENAME TO sites_old")
         conn.execute("""
@@ -72,7 +78,7 @@ def migrate_bounced_status():
                 email TEXT,
                 telegram TEXT,
                 status TEXT DEFAULT 'pending'
-                    CHECK(status IN ('pending','sent','replied','hired','rejected','bounced')),
+                    CHECK(status IN ('pending','sent','replied','hired','rejected','bounced','review')),
                 tags TEXT,
                 source TEXT DEFAULT 'manual',
                 notes TEXT,
@@ -84,7 +90,7 @@ def migrate_bounced_status():
         conn.execute("""
             INSERT INTO sites (id, url, email, telegram, status, tags, source, notes, amount_earned, created_at, updated_at)
             SELECT id, url, email, telegram,
-                   CASE WHEN status NOT IN ('pending','sent','replied','hired','rejected','bounced') THEN 'pending' ELSE status END,
+                   CASE WHEN status NOT IN ('pending','sent','replied','hired','rejected','bounced','review') THEN 'pending' ELSE status END,
                    tags, source, notes, amount_earned, created_at, updated_at
             FROM sites_old
         """)
@@ -106,13 +112,13 @@ def cmd_add(args):
     conn = get_conn()
     try:
         conn.execute(
-            """INSERT INTO sites (url, email, telegram, tags, source, notes)
-               VALUES (?, ?, ?, ?, ?, ?)""",
-            (args.url, args.email, args.tg, args.tags, args.source, args.notes)
+            """INSERT INTO sites (url, email, telegram, status, tags, source, notes)
+               VALUES (?, ?, ?, ?, ?, ?, ?)""",
+            (args.url, args.email, args.tg, args.status, args.tags, args.source, args.notes)
         )
         conn.commit()
         site_id = conn.execute("SELECT last_insert_rowid()").fetchone()[0]
-        print(f"[+] Added site #{site_id}: {args.url}")
+        print(f"[+] Added site #{site_id}: {args.url} (status={args.status})")
     except sqlite3.IntegrityError:
         print(f"[!] Site already exists: {args.url}")
         existing = conn.execute("SELECT id FROM sites WHERE url = ?", (args.url,)).fetchone()
@@ -351,10 +357,12 @@ def main():
     p_add.add_argument('--tags', help='Comma-separated tags (e.g. restaurant,belarus)')
     p_add.add_argument('--source', default='manual', help='Where this site was found')
     p_add.add_argument('--notes', help='Additional notes')
+    p_add.add_argument('--status', choices=['pending', 'review'], default='pending',
+                       help="pending = ready to send; review = auto-discovered, needs manual approval first")
 
     # list
     p_list = subparsers.add_parser('list', help='List sites')
-    p_list.add_argument('--status', choices=['pending', 'sent', 'replied', 'hired', 'rejected', 'bounced'],
+    p_list.add_argument('--status', choices=['pending', 'sent', 'replied', 'hired', 'rejected', 'bounced', 'review'],
                         help='Filter by status')
     p_list.add_argument('--tags', help='Filter by tags (substring match)')
 
@@ -393,7 +401,7 @@ def main():
     p_edit.add_argument('--tags', help='New tags')
     p_edit.add_argument('--source', help='New source')
     p_edit.add_argument('--notes', help='New notes')
-    p_edit.add_argument('--status', choices=['pending', 'sent', 'replied', 'hired', 'rejected', 'bounced'],
+    p_edit.add_argument('--status', choices=['pending', 'sent', 'replied', 'hired', 'rejected', 'bounced', 'review'],
                         help='New status')
 
     # stats
