@@ -1145,7 +1145,7 @@ class GordonDesktop(QMainWindow):
         """Окно просмотра ответов + кнопка проверки IMAP (agent_recorder.py)."""
         dlg = QDialog(self)
         dlg.setWindowTitle("📥 Ответы от людей")
-        dlg.showFullScreen()
+        dlg.resize(900, 620)
         dlg.setStyleSheet(f"QDialog {{ background:{BG}; color:{TEXT}; }}")
         lay = QVBoxLayout(dlg)
         lay.setContentsMargins(14, 14, 14, 14)
