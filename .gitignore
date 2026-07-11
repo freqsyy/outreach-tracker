@@ -1,5 +1,7 @@
 # Секреты - никогда не в git
 .env
+bridge.env
+*.env
 
 # Python
 __pycache__/
@@ -22,3 +24,12 @@ outreach.db-shm
 
 gordon_run.bat
 gordon_task.xml
+
+# Логи и временные артефакты агентов (не в репо)
+*.log
+*.out
+__reply5.txt
+kv_inbox_dump.txt
+\!x.visible)
+sites.db
+bridge_*.txt
