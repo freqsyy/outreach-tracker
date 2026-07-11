@@ -52,3 +52,19 @@ def test_neon_button_hover_increases_blur(qapp):
     assert b.graphicsEffect().blurRadius() > base
     b.leaveEvent(None)
     assert b.graphicsEffect().blurRadius() == base
+
+
+def test_status_indicator_idle(qapp):
+    s = g.StatusIndicator()
+    assert s._active is False
+    assert "не запущен" in s.label.text()
+
+
+def test_status_indicator_active(qapp):
+    s = g.StatusIndicator()
+    s.set_active(True, "Гордон работает…")
+    assert s._active is True
+    assert "работает" in s.label.text()
+    s.set_active(False)
+    assert s._active is False
+    assert "не запущен" in s.label.text()

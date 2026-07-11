@@ -327,6 +327,58 @@ class NeonButton(QPushButton):
 
 
 # ---------------------------------------------------------------------------
+# Индикатор статуса Гордона (пульсирующее свечение)
+# ---------------------------------------------------------------------------
+class StatusIndicator(QWidget):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self._active = False
+        self.setFixedHeight(36)
+        self.setMinimumWidth(210)
+        self._glow = QGraphicsDropShadowEffect(self)
+        self._glow.setBlurRadius(10)
+        self._glow.setColor(QColor(MUTED))
+        self._glow.setOffset(0, 0)
+        self.label = QLabel("Гордон не запущен")
+        self.label.setStyleSheet(f"color:{MUTED}; font-weight:bold;")
+        self.label.setGraphicsEffect(self._glow)
+        lay = QHBoxLayout(self)
+        lay.setContentsMargins(0, 0, 0, 0)
+        lay.addWidget(self.label)
+        self._pulse = QPropertyAnimation(self, b"pulse")
+        self._pulse.setDuration(1200)
+        self._pulse.setLoopCount(-1)
+        self._pulse.setStartValue(0.3)
+        self._pulse.setEndValue(1.0)
+        self._pulse.valueChanged.connect(self._on_pulse)
+
+    def get_pulse(self):
+        return 0.0
+
+    def set_pulse(self, v):
+        pass
+
+    pulse = Property(float, get_pulse, set_pulse)
+
+    def _on_pulse(self, v):
+        self._glow.setBlurRadius(8 + int(18 * v))
+
+    def set_active(self, on, text=None):
+        self._active = on
+        self.label.setText(text or ("Гордон работает…" if on else "Гордон не запущен"))
+        if on:
+            self.label.setStyleSheet(f"color:{NEON_CYAN}; font-weight:bold;")
+            self._glow.setColor(QColor(NEON_CYAN))
+            if self._pulse.state() != QPropertyAnimation.Running:
+                self._pulse.start()
+        else:
+            self.label.setStyleSheet(f"color:{MUTED}; font-weight:bold;")
+            self._glow.setColor(QColor(MUTED))
+            self._pulse.stop()
+            self._glow.setBlurRadius(10)
+
+
+# ---------------------------------------------------------------------------
 # Поток запуска Гордона (gordon.py / send_now.py)
 # ---------------------------------------------------------------------------
 class GordonRunner(QThread):
