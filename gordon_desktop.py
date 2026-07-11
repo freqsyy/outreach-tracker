@@ -26,10 +26,12 @@ from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QTableWidget, QTableWidgetItem, QComboBox, QLineEdit, QFrame,
     QDialog, QTextEdit, QPlainTextEdit, QMessageBox, QInputDialog, QScrollArea,
-    QSplitter, QHeaderView, QStyle,
+    QSplitter, QHeaderView, QStyle, QGraphicsDropShadowEffect,
 )
-from PySide6.QtCore import Qt, QThread, QTimer, Signal, Property
-from PySide6.QtGui import QFont, QColor, QIcon, QGuiApplication
+from PySide6.QtCore import Qt, QThread, QTimer, Signal, Property, QPropertyAnimation
+from PySide6.QtGui import (
+    QFont, QColor, QIcon, QGuiApplication, QPainter, QLinearGradient, QPen,
+)
 
 # ---------------------------------------------------------------------------
 # Пути (всё рядом с приложением)
@@ -193,34 +195,95 @@ def domain_of(url):
 
 
 # ---------------------------------------------------------------------------
-# Виджет-плитка статистики
+# Неон-заголовок (градиентный текст + свечение)
 # ---------------------------------------------------------------------------
-class StatsCard(QFrame):
-    def __init__(self, title, color=ACCENT):
-        super().__init__()
-        self.setObjectName("card")
-        self.setStyleSheet(
-            f"#card {{ background:{PANEL}; border:1px solid #262b36; "
-            f"border-radius:10px; padding:8px; }}"
-        )
-        self.setFixedHeight(78)
-        self.setMinimumWidth(104)
+class NeonTitle(QLabel):
+    def __init__(self, text, parent=None):
+        super().__init__(text, parent)
+        self._text = text
+        self.setFont(QFont("Segoe UI", 22, QFont.Bold))
+        self._glow = QGraphicsDropShadowEffect(self)
+        self._glow.setColor(QColor(NEON_PURPLE))
+        self._glow.setBlurRadius(18)
+        self._glow.setOffset(0, 0)
+        self.setGraphicsEffect(self._glow)
+        self.setStyleSheet("background:transparent;")
+
+    def paintEvent(self, e):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        grad = QLinearGradient(0, 0, self.width(), 0)
+        grad.setColorAt(0, QColor(NEON_PURPLE))
+        grad.setColorAt(0.5, QColor(NEON_CYAN))
+        grad.setColorAt(1, QColor(NEON_PINK))
+        p.setFont(self.font())
+        p.setPen(Qt.NoPen)
+        p.setBrush(grad)
+        p.drawText(self.rect(), Qt.AlignLeft | Qt.AlignVCenter, self._text)
+
+
+# ---------------------------------------------------------------------------
+# Неон-карточка статистики (градиент + glow-бордер + вспышка при обновлении)
+# ---------------------------------------------------------------------------
+class NeonCard(QWidget):
+    def __init__(self, title, color=NEON_CYAN, parent=None):
+        super().__init__(parent)
+        self._color = QColor(color)
+        self._flash = 0.0
+        self.setFixedHeight(86)
+        self.setMinimumWidth(112)
         lay = QVBoxLayout(self)
-        lay.setContentsMargins(10, 6, 10, 6)
+        lay.setContentsMargins(12, 8, 12, 8)
         lay.setSpacing(2)
         self.num = QLabel("0")
-        self.num.setFont(QFont("Segoe UI", 22, QFont.Bold))
-        self.num.setStyleSheet(f"color:{color};")
+        self.num.setFont(QFont("Segoe UI", 24, QFont.Bold))
         self.num.setAlignment(Qt.AlignCenter)
+        self.num.setStyleSheet(f"color:{color}; background:transparent;")
         self.title = QLabel(title)
         self.title.setFont(QFont("Segoe UI", 9))
-        self.title.setStyleSheet(f"color:{MUTED};")
         self.title.setAlignment(Qt.AlignCenter)
+        self.title.setStyleSheet(f"color:{MUTED}; background:transparent;")
         lay.addWidget(self.num)
         lay.addWidget(self.title)
+        self._glow = QGraphicsDropShadowEffect(self)
+        self._glow.setBlurRadius(18)
+        self._glow.setColor(self._color)
+        self._glow.setOffset(0, 0)
+        self.setGraphicsEffect(self._glow)
+        self._anim = QPropertyAnimation(self, b"flash")
+        self._anim.setDuration(600)
+        self._anim.setStartValue(1.0)
+        self._anim.setEndValue(0.0)
+        self._anim.valueChanged.connect(self.update)
+
+    def get_flash(self):
+        return self._flash
+
+    def set_flash(self, v):
+        self._flash = v
+
+    flash = Property(float, get_flash, set_flash)
 
     def set_value(self, text):
         self.num.setText(str(text))
+        self._anim.stop()
+        self._anim.start()
+
+    def paintEvent(self, e):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        r = self.rect().adjusted(1, 1, -1, -1)
+        rad = 12
+        p.setPen(Qt.NoPen)
+        p.setBrush(QColor(18, 16, 38, 205))
+        p.drawRoundedRect(r, rad, rad)
+        alpha = 70 + int(145 * self._flash)
+        pen = QPen(QColor(self._color).lighter(130))
+        pen.setWidth(2)
+        p.setPen(pen)
+        p.setBrush(Qt.NoBrush)
+        p.drawRoundedRect(r, rad, rad)
+        super().paintEvent(e)
 
 
 # ---------------------------------------------------------------------------
