@@ -15,6 +15,10 @@ nul
 
 # ВАЖНО: outreach.db, gordon_send_state.json, gordon_run.log, status.json
 # НЕ игнорируются - GitHub Actions коммитит их обратно в репо.
+# journal_mode=DELETE: WAL/SHM файлы не нужны (всё в outreach.db), но на всякий
+# игнорим их, чтобы не попали в коммит при случайном переключении режима.
+outreach.db-wal
+outreach.db-shm
 
 gordon_run.bat
 gordon_task.xml

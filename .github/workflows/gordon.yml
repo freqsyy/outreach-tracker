@@ -38,6 +38,21 @@ jobs:
       # Разброс времени внутри часа делает сам agent_sender (RANDOM_START_SEC),
       # здесь ждать не надо - иначе subprocess падает по таймауту.
 
+      # --- Подтянуть свежую БД и логи, которые Назар запушил с ПК ---
+      # --autostash кладёт локальные правки (если вдруг есть) в stash,
+      # rebase накатывает на свежий main, потом pop. Сливаем WAL в основной
+      # файл, чтобы git увидел ВСЕ записанные данные (а не только -wal).
+      - name: Sync DB from repo (pull latest)
+        run: |
+          git pull --rebase --autostash origin main
+          python - <<'PY'
+          import sqlite3, os
+          if os.path.exists("outreach.db"):
+              c = sqlite3.connect("outreach.db")
+              c.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+              c.close()
+          PY
+
       - name: Run Gordon
         run: python gordon.py
 
@@ -46,6 +61,14 @@ jobs:
 
       - name: Commit state back
         run: |
+          # слить WAL в основной файл перед коммитом (данные целиком в outreach.db)
+          python - <<'PY'
+          import sqlite3, os
+          if os.path.exists("outreach.db"):
+              c = sqlite3.connect("outreach.db")
+              c.execute("PRAGMA wal_checkpoint(TRUNCATE)")
+              c.close()
+          PY
           git config user.name "gordon-bot"
           git config user.email "gordon@users.noreply.github.com"
           git add outreach.db gordon_run.log status.json gordon_send_state.json
