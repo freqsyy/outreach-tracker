@@ -129,21 +129,6 @@ def apply(id_, status, amount=None, note=None):
     gc.log(f"Reshenie po #{id_}: {status}" + (f" (+{amount} BYN)" if amount else ""), "RECORDER")
 
 
-def apply(id_, status, amount=None):
-    if status == "replied":
-        subprocess.run([sys.executable, TRACK, "reply", str(id_)],
-                       capture_output=True, text=True, timeout=30)
-    elif status == "hired":
-        cmd = [sys.executable, TRACK, "hired", str(id_)]
-        if amount:
-            cmd += ["--amount", str(amount)]
-        subprocess.run(cmd, capture_output=True, text=True, timeout=30)
-    elif status == "rejected":
-        subprocess.run([sys.executable, TRACK, "rejected", str(id_)],
-                       capture_output=True, text=True, timeout=30)
-    gc.log(f"Reshenie po #{id_}: {status}" + (f" (+{amount} BYN)" if amount else ""), "RECORDER")
-
-
 def main():
     env = gc.load_env()
 
