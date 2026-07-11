@@ -68,3 +68,12 @@ def test_status_indicator_active(qapp):
     s.set_active(False)
     assert s._active is False
     assert "не запущен" in s.label.text()
+
+
+def test_main_window_builds(qapp):
+    w = g.GordonDesktop()
+    assert w is not None
+    assert hasattr(w, "status_ind") and isinstance(w.status_ind, g.StatusIndicator)
+    assert len(w.cards) >= 9
+    assert isinstance(w.cards["Sent"], g.NeonCard)
+    assert isinstance(w.btn_start, g.NeonButton)

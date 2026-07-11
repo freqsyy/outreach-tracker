@@ -623,28 +623,52 @@ class GordonDesktop(QMainWindow):
     # ----- построение UI -----
     def _build_ui(self):
         root = QWidget()
+        root.setObjectName("root")
+        root.setStyleSheet(
+            "QWidget#root { background: qlineargradient("
+            "x1:0, y1:0, x2:0, y2:1, stop:0 #070710, stop:1 #0d0a1a); }")
         self.setCentralWidget(root)
         main = QVBoxLayout(root)
-        main.setContentsMargins(10, 10, 10, 10)
+        main.setContentsMargins(12, 12, 12, 12)
         main.setSpacing(10)
 
-        # 1) Дашборд (плитки) — в горизонтальном скролле
+        # --- HEADER ---
+        header = QHBoxLayout()
+        header.setSpacing(10)
+        shield = QLabel("🛡")
+        shield.setStyleSheet("font-size:30px; background:transparent;")
+        s_glow = QGraphicsDropShadowEffect(shield)
+        s_glow.setColor(QColor(NEON_PURPLE))
+        s_glow.setBlurRadius(20)
+        s_glow.setOffset(0, 0)
+        shield.setGraphicsEffect(s_glow)
+        title = NeonTitle("ПУЛЬТ ГОРДОНА")
+        ver = QLabel("v0.5")
+        ver.setStyleSheet(f"color:{MUTED}; font-size:11px;")
+        header.addWidget(shield)
+        header.addWidget(title)
+        header.addWidget(ver)
+        header.addStretch(1)
+        self.status_ind = StatusIndicator()
+        header.addWidget(self.status_ind)
+        main.addLayout(header)
+
+        # --- DASHBOARD (неон-карточки) ---
         self.cards = {}
         dash = QHBoxLayout()
-        dash.setSpacing(8)
+        dash.setSpacing(10)
         card_defs = [
             ("Total", None), ("Pending", "pending"), ("Sent", "sent"),
             ("Replied", "replied"), ("Hired", "hired"),
             ("Rejected", "rejected"), ("Bounced", "bounced"),
         ]
-        for title, st in card_defs:
-            color = STATUS_COLORS.get(st, ACCENT) if st else "#8b5cf6"
-            c = StatsCard(title, color)
-            self.cards[title] = c
+        for title_, st in card_defs:
+            color = STATUS_COLORS.get(st, NEON_PURPLE) if st else NEON_PURPLE
+            c = NeonCard(title_, color)
+            self.cards[title_] = c
             dash.addWidget(c)
-        # конверсия и заработок
-        self.cards["Conv"] = StatsCard("Конверсия %", ACCENT)
-        self.cards["Earned"] = StatsCard("Заработано", STATUS_COLORS["hired"])
+        self.cards["Conv"] = NeonCard("Конверсия %", NEON_CYAN)
+        self.cards["Earned"] = NeonCard("Заработано", STATUS_COLORS["hired"])
         dash.addWidget(self.cards["Conv"])
         dash.addWidget(self.cards["Earned"])
         dash.addStretch(1)
@@ -653,96 +677,66 @@ class GordonDesktop(QMainWindow):
         dash_scroll.setWidgetResizable(True)
         dash_scroll.setHorizontalScrollBarPolicy(Qt.ScrollBarAsNeeded)
         dash_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
-        dash_scroll.setFixedHeight(96)
-        dash_scroll.setStyleSheet(f"QScrollArea {{ background:{BG}; border:none; }}")
+        dash_scroll.setFixedHeight(104)
+        dash_scroll.setStyleSheet(
+            f"QScrollArea {{ background:transparent; border:none; }}")
         dash_wrap = QWidget()
         dash_wrap.setLayout(dash)
         dash_scroll.setWidget(dash_wrap)
         main.addWidget(dash_scroll)
 
-        # 2) средняя зона: слева панель управления, справа splitter(таблица / лог)
+        # --- MID: sidebar + center ---
         mid = QHBoxLayout()
         mid.setSpacing(10)
 
-        # --- панель управления ---
         ctrl = QVBoxLayout()
         ctrl.setSpacing(8)
         ctrl_frame = QFrame()
         ctrl_frame.setObjectName("ctrl")
         ctrl_frame.setStyleSheet(
-            f"#ctrl {{ background:{PANEL}; border:1px solid #262b36; "
-            f"border-radius:10px; padding:10px; }}"
-        )
-        ctrl_frame.setFixedWidth(230)
+            f"#ctrl {{ background:{PANEL}; border:1px solid {BORDER}; "
+            f"border-radius:14px; padding:12px; }}")
+        ctrl_frame.setFixedWidth(236)
         ctrl_frame.setLayout(ctrl)
 
-        title = QLabel("УПРАВЛЕНИЕ")
-        title.setStyleSheet(f"color:{MUTED}; font-weight:bold;")
-        ctrl.addWidget(title)
+        ag_label = QLabel("АГЕНТЫ")
+        ag_label.setStyleSheet(f"color:{MUTED}; font-weight:bold; letter-spacing:1px;")
+        ctrl.addWidget(ag_label)
 
-        self.status_ind = QLabel("Гордон не запущен")
-        self.status_ind.setStyleSheet(
-            f"color:{MUTED}; background:{PANEL2}; border-radius:6px; "
-            f"padding:6px; font-weight:bold;"
-        )
-        self.status_ind.setAlignment(Qt.AlignCenter)
-        ctrl.addWidget(self.status_ind)
-
-        self.btn_start = QPushButton("▶ Запустить Гордона")
-        self.btn_stop = QPushButton("⏹ Стоп")
-        self.btn_force = QPushButton("⚠ Форсированная отправка (вне окна!)")
-        for b, slot, base in [
-            (self.btn_start, self.start_gordon, ACCENT),
-            (self.btn_stop, self.stop_gordon, "#ef4444"),
-            (self.btn_force, self.start_forced, "#f97316"),
-        ]:
-            b.setStyleSheet(
-                f"QPushButton {{ background:{base}; color:#0f1115; font-weight:bold; "
-                f"border-radius:8px; padding:10px; }}"
-                f"QPushButton:disabled {{ background:{PANEL2}; color:{MUTED}; }}"
-            )
-            b.clicked.connect(slot)
-            ctrl.addWidget(b)
+        # для start/stop/force — базовый цвет акцента
+        self.btn_start = NeonButton("▶ Запустить Гордона", NEON_CYAN)
+        self.btn_stop = NeonButton("⏹ Стоп", "#ff4d6d")
+        self.btn_force = NeonButton("⚠ Форсированная отправка (вне окна!)", "#fb923c")
+        self.btn_start.clicked.connect(self.start_gordon)
+        self.btn_stop.clicked.connect(self.stop_gordon)
+        self.btn_force.clicked.connect(self.start_forced)
         self.btn_stop.setEnabled(False)
+        for b in (self.btn_start, self.btn_stop, self.btn_force):
+            ctrl.addWidget(b)
 
         ctrl.addSpacing(10)
-        # инфо про гард
         guard = QLabel(
             "Штатный gordon.py сам уважает окно 9-21 и дневные лимиты.\n"
-            "Форсированная отправка (send_now.py) — ВНЕ окна, только по прямой команде."
-        )
+            "Форсированная отправка (send_now.py) — ВНЕ окна, только по прямой команде.")
         guard.setWordWrap(True)
         guard.setStyleSheet(f"color:{MUTED}; font-size:10px;")
         ctrl.addWidget(guard)
 
-        # --- секция АГЕНТЫ ---
         ctrl.addSpacing(12)
-        ag_title = QLabel("АГЕНТЫ")
-        ag_title.setStyleSheet(f"color:{MUTED}; font-weight:bold;")
-        ctrl.addWidget(ag_title)
-
-        self.btn_parse = QPushButton("🕸 Парсинг сайтов")
-        self.btn_replies = QPushButton("📥 Просмотр ответов")
-        for b, slot, base in [
-            (self.btn_parse, self.open_parse_menu, ACCENT),
-            (self.btn_replies, self.open_replies, "#22c55e"),
-        ]:
-            b.setStyleSheet(
-                f"QPushButton {{ background:{PANEL2}; color:{TEXT}; "
-                f"border:1px solid {base}; border-radius:8px; padding:8px; }}"
-                f"QPushButton:hover {{ background:{base}; color:#0f1115; }}"
-            )
-            b.clicked.connect(slot)
-            ctrl.addWidget(b)
-
+        agents_label = QLabel("ИНСТРУМЕНТЫ")
+        agents_label.setStyleSheet(f"color:{MUTED}; font-weight:bold; letter-spacing:1px;")
+        ctrl.addWidget(agents_label)
+        self.btn_parse = NeonButton("🕸 Парсинг сайтов", NEON_CYAN)
+        self.btn_replies = NeonButton("📥 Просмотр ответов", "#22c55e")
+        self.btn_parse.clicked.connect(self.open_parse_menu)
+        self.btn_replies.clicked.connect(self.open_replies)
+        ctrl.addWidget(self.btn_parse)
+        ctrl.addWidget(self.btn_replies)
         ctrl.addStretch(1)
-
         mid.addWidget(ctrl_frame)
 
-        # --- правый splitter ---
+        # --- центр: splitter(таблица / лог) ---
         vsplit = QSplitter(Qt.Vertical)
-
-        # верх splitter: фильтры + таблица
         top = QWidget()
         top_lay = QVBoxLayout(top)
         top_lay.setContentsMargins(0, 0, 0, 0)
@@ -763,8 +757,7 @@ class GordonDesktop(QMainWindow):
         self.sort_combo = QComboBox()
         self.sort_combo.addItems(["Обновлено ↓", "Обновлено ↑", "ID ↓", "ID ↑"])
         self.sort_combo.setStyleSheet(self._combo_style())
-        for w in (self.status_combo, self.search_edit,
-                  self.tags_edit, self.sort_combo):
+        for w in (self.status_combo, self.search_edit, self.tags_edit, self.sort_combo):
             filt.addWidget(w)
         self.search_edit.setMinimumWidth(220)
         top_lay.addLayout(filt)
@@ -787,21 +780,19 @@ class GordonDesktop(QMainWindow):
         self.table.setStyleSheet(self._table_style())
         top_lay.addWidget(self.table, 1)
 
-        # низ splitter: лента лога
         bot = QWidget()
         bot_lay = QVBoxLayout(bot)
         bot_lay.setContentsMargins(0, 0, 0, 0)
         bot_lay.setSpacing(4)
         log_label = QLabel("ЖИВАЯ ЛЕНТА (gordon_run.log)")
-        log_label.setStyleSheet(f"color:{MUTED}; font-weight:bold;")
+        log_label.setStyleSheet(f"color:{MUTED}; font-weight:bold; letter-spacing:1px;")
         bot_lay.addWidget(log_label)
         self.log_view = QPlainTextEdit()
         self.log_view.setReadOnly(True)
         self.log_view.setFont(QFont("Consolas", 10))
         self.log_view.setStyleSheet(
-            f"background:{PANEL}; color:#cfe3ff; border:1px solid #262b36; "
-            f"border-radius:8px;"
-        )
+            f"background:{PANEL}; color:#cfe3ff; border:1px solid {BORDER}; "
+            f"border-radius:10px;")
         bot_lay.addWidget(self.log_view, 1)
 
         vsplit.addWidget(top)
@@ -976,10 +967,7 @@ class GordonDesktop(QMainWindow):
         self.runner.log_line.connect(self.append_log)
         self.runner.finished.connect(self.on_runner_finished)
         self.runner.start()
-        self.status_ind.setText("Гордон работает…")
-        self.status_ind.setStyleSheet(
-            f"color:#0f1115; background:{STATUS_COLORS['sent']}; "
-            f"border-radius:6px; padding:6px; font-weight:bold;")
+        self.status_ind.set_active(True, "Гордон работает…")
         self.btn_start.setEnabled(False)
         self.btn_force.setEnabled(False)
         self.btn_stop.setEnabled(True)
@@ -1000,10 +988,7 @@ class GordonDesktop(QMainWindow):
         self.runner.log_line.connect(self.append_log)
         self.runner.finished.connect(self.on_runner_finished)
         self.runner.start()
-        self.status_ind.setText("Форсированная отправка…")
-        self.status_ind.setStyleSheet(
-            f"color:#0f1115; background:{STATUS_COLORS['bounced']}; "
-            f"border-radius:6px; padding:6px; font-weight:bold;")
+        self.status_ind.set_active(True, "Форсированная отправка…")
         self.btn_start.setEnabled(False)
         self.btn_force.setEnabled(False)
         self.btn_stop.setEnabled(True)
@@ -1014,10 +999,7 @@ class GordonDesktop(QMainWindow):
             self.runner.stop()
 
     def on_runner_finished(self, code):
-        self.status_ind.setText("Гордон не запущен")
-        self.status_ind.setStyleSheet(
-            f"color:{MUTED}; background:{PANEL2}; border-radius:6px; "
-            f"padding:6px; font-weight:bold;")
+        self.status_ind.set_active(False, "Гордон не запущен")
         # разблокируем ВСЕ кнопки запуска (работал любой из процессов)
         self.btn_start.setEnabled(True)
         self.btn_force.setEnabled(True)
@@ -1220,7 +1202,9 @@ class GordonDesktop(QMainWindow):
 # ---------------------------------------------------------------------------
 def main():
     app = QApplication(sys.argv)
-    app.setStyleSheet(f"QMainWindow {{ background:{BG}; color:{TEXT}; }}")
+    app.setStyleSheet(
+        f"QMainWindow {{ background:{BG}; color:{TEXT}; }}"
+        f"QToolTip {{ background:#14122a; color:{TEXT}; border:1px solid {BORDER}; }}")
     win = GordonDesktop()
     win.show()
     sys.exit(app.exec())
