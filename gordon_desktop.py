@@ -91,7 +91,7 @@ def get_conn():
 
 
 def read_stats():
-    """Одним запросом — сводка по статусам + заработок."""
+    """Одним запросом - сводка по статусам + заработок."""
     try:
         conn = get_conn()
         by_status = {}
@@ -123,7 +123,7 @@ def read_stats():
             "conversion": conv,
         }
     except sqlite3.OperationalError:
-        # БД занята Гордоном — пропускаем итерацию
+        # БД занята Гордоном - пропускаем итерацию
         return None
     except Exception:
         return None
@@ -254,7 +254,7 @@ class NeonCard(QWidget):
         self._anim.setDuration(600)
         self._anim.setStartValue(1.0)
         self._anim.setEndValue(0.0)
-        self._anim.valueChanged.connect(self.update)
+        self._anim.valueChanged.connect(self._on_flash)
 
     def get_flash(self):
         return self._flash
@@ -269,6 +269,10 @@ class NeonCard(QWidget):
         self._anim.stop()
         self._anim.start()
 
+    def _on_flash(self):
+        self._glow.setBlurRadius(18 + int(14 * self._flash))
+        self.update()
+
     def paintEvent(self, e):
         p = QPainter(self)
         p.setRenderHint(QPainter.Antialiasing)
@@ -277,9 +281,9 @@ class NeonCard(QWidget):
         p.setPen(Qt.NoPen)
         p.setBrush(QColor(18, 16, 38, 205))
         p.drawRoundedRect(r, rad, rad)
-        alpha = 70 + int(145 * self._flash)
-        pen = QPen(QColor(self._color).lighter(130))
-        pen.setWidth(2)
+        # вспышка при set_value(): бордер ярче и толще, glow разгоняется
+        pen = QPen(QColor(self._color).lighter(130 + int(50 * self._flash)))
+        pen.setWidth(2 + int(2 * self._flash))
         p.setPen(pen)
         p.setBrush(Qt.NoBrush)
         p.drawRoundedRect(r, rad, rad)
@@ -453,7 +457,7 @@ class SiteDetailDialog(QDialog):
             lab = QLabel(label)
             lab.setFixedWidth(90)
             lab.setStyleSheet(f"color:{MUTED};")
-            val = QLabel(str(value if value is not None else "—"))
+            val = QLabel(str(value if value is not None else "-"))
             val.setWordWrap(True)
             val.setTextInteractionFlags(Qt.TextSelectableByMouse)
             row.addWidget(lab)
@@ -483,11 +487,11 @@ class SiteDetailDialog(QDialog):
         lay.addLayout(field("Source", data.get("source", "")))
         lay.addLayout(field("Earned",
                             f"BYN {data.get('amount_earned') or 0:.2f}"
-                            if data.get("amount_earned") else "—"))
+                            if data.get("amount_earned") else "-"))
         lay.addLayout(field("Создан", data.get("created_at", "")))
         lay.addLayout(field("Обновлён", data.get("updated_at", "")))
 
-        # notes — полностью, с переносами
+        # notes - полностью, с переносами
         lay.addWidget(QLabel("Заметки / аудит:"))
         notes = QTextEdit()
         notes.setReadOnly(True)
@@ -703,7 +707,7 @@ class GordonDesktop(QMainWindow):
         ag_label.setStyleSheet(f"color:{MUTED}; font-weight:bold; letter-spacing:1px;")
         ctrl.addWidget(ag_label)
 
-        # для start/stop/force — базовый цвет акцента
+        # для start/stop/force - базовый цвет акцента
         self.btn_start = NeonButton("▶ Запустить Гордона", NEON_CYAN)
         self.btn_stop = NeonButton("⏹ Стоп", "#ff4d6d")
         self.btn_force = NeonButton("⚠ Форсированная отправка (вне окна!)", "#fb923c")
@@ -717,7 +721,7 @@ class GordonDesktop(QMainWindow):
         ctrl.addSpacing(10)
         guard = QLabel(
             "Штатный gordon.py сам уважает окно 9-21 и дневные лимиты.\n"
-            "Форсированная отправка (send_now.py) — ВНЕ окна, только по прямой команде.")
+            "Форсированная отправка (send_now.py) - ВНЕ окна, только по прямой команде.")
         guard.setWordWrap(True)
         guard.setStyleSheet(f"color:{MUTED}; font-size:10px;")
         ctrl.addWidget(guard)
@@ -870,13 +874,13 @@ class GordonDesktop(QMainWindow):
                 st,
                 r.get("tags") or "",
                 (f"BYN {r.get('amount_earned') or 0:.2f}"
-                 if r.get("amount_earned") else "—"),
+                 if r.get("amount_earned") else "-"),
                 (r.get("updated_at") or "")[:19],
             ]
             for c, v in enumerate(vals):
                 item = QTableWidgetItem(v)
                 item.setForeground(QColor(TEXT))
-                if c == 4:  # статус — бейдж цветом
+                if c == 4:  # статус - бейдж цветом
                     item.setBackground(color)
                     item.setForeground(QColor("#0f1115"))
                     item.setFont(QFont("Segoe UI", 9, QFont.Bold))
@@ -909,7 +913,7 @@ class GordonDesktop(QMainWindow):
             self._seen_sent.add(r["id"])
             if not initial:
                 d = domain_of(r["url"])
-                addr = r["email"] or "—"
+                addr = r["email"] or "-"
                 self.append_log(
                     f"📨 Отправлено #{r['id']} → {addr} ({d})")
                 self._fresh_sent[r["id"]] = datetime.now().timestamp()
@@ -939,7 +943,7 @@ class GordonDesktop(QMainWindow):
                 return
             size = os.path.getsize(LOG_PATH)
             if size < self._log_pos:
-                # файл ужался/пересоздан — начинаем сначала
+                # файл ужался/пересоздан - начинаем сначала
                 self._log_pos = 0
             with open(LOG_PATH, "r", encoding="utf-8", errors="replace") as f:
                 f.seek(self._log_pos)
@@ -1020,7 +1024,7 @@ class GordonDesktop(QMainWindow):
     # ----- запуск других агентов -----
     def _run_agent_script(self, script, label):
         """Запускает произвольный агентский скрипт в отдельном потоке.
-        Если уже что-то крутится — новый запуск блокируем (один поток)."""
+        Если уже что-то крутится - новый запуск блокируем (один поток)."""
         if self.runner and self.runner.isRunning():
             QMessageBox.information(
                 self, "Занято",
@@ -1037,7 +1041,7 @@ class GordonDesktop(QMainWindow):
         self.btn_parse.setEnabled(False)
         self.btn_replies.setEnabled(False)
         self.btn_stop.setEnabled(True)
-        self.append_log(f"[APP] {label} запущен — следите за лентой ↓")
+        self.append_log(f"[APP] {label} запущен - следите за лентой ↓")
 
     def open_parse_menu(self):
         """Меню запуска парсинга сайтов."""
@@ -1118,7 +1122,7 @@ class GordonDesktop(QMainWindow):
         lay.setSpacing(8)
 
         info = QLabel(
-            "Сверху — сайты со статусом replied / hired (кто ответил).\n"
+            "Сверху - сайты со статусом replied / hired (кто ответил).\n"
             "Кнопка «Проверить почту» запускает agent_recorder.py, который "
             "поллит IMAP-ящики на входящие ответы и помечает их в БД.")
         info.setWordWrap(True)
@@ -1183,7 +1187,7 @@ class GordonDesktop(QMainWindow):
             self._run_agent_script(
                 os.path.join(HERE, "agent_recorder.py"), "Проверка ответов (IMAP)")
             b_check.setEnabled(False)
-            # после завершения — обновим таблицу и дашборд
+            # после завершения - обновим таблицу и дашборд
             # (on_runner_finished дёрнет refresh_all; плюс таймеры сами освежат)
 
         b_check.clicked.connect(do_check)
