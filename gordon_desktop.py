@@ -25,6 +25,7 @@ from urllib.parse import urlparse
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
     QPushButton, QTableWidget, QTableWidgetItem, QComboBox, QLineEdit, QFrame,
+    QListWidget, QListWidgetItem,
     QDialog, QTextEdit, QPlainTextEdit, QMessageBox, QInputDialog, QScrollArea,
     QSplitter, QHeaderView, QStyle, QGraphicsDropShadowEffect,
 )
@@ -1140,28 +1141,63 @@ class GordonDesktop(QMainWindow):
         lay.setSpacing(8)
 
         info = QLabel(
-            "Сверху - сайты со статусом replied / hired (кто ответил).\n"
+            "Слева - кто ответил (URL + email). Справа - полный текст ответа.\n"
             "Кнопка «Проверить почту» запускает agent_recorder.py, который "
             "поллит IMAP-ящики на входящие ответы и помечает их в БД.")
         info.setWordWrap(True)
         info.setStyleSheet(f"color:{MUTED}; font-size:10px;")
         lay.addWidget(info)
 
-        # таблица откликов
-        tbl = QTableWidget()
-        tbl.setColumnCount(5)
-        tbl.setHorizontalHeaderLabels(["ID", "URL", "Email", "Status", "Notes"])
-        tbl.setEditTriggers(QTableWidget.NoEditTriggers)
-        tbl.setStyleSheet(self._table_style())
-        # ID и Status - узкие фикс, остальное тянется, чтобы email и notes
-        # были видны целиком (иначе "кто ответил" обрезается)
-        tbl.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
-        tbl.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-        tbl.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
-        tbl.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
-        tbl.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
-        tbl.setMinimumWidth(640)
-        lay.addWidget(tbl, 1)
+        # сплиттер: слева список откликов, справа - полный текст выбранного
+        split = QSplitter(Qt.Horizontal)
+        lay.addWidget(split, 1)
+
+        # --- левая панель: список кто ответил ---
+        left = QWidget()
+        left_lay = QVBoxLayout(left)
+        left_lay.setContentsMargins(0, 0, 0, 0)
+        left_lay.setSpacing(6)
+        list_label = QLabel("Кто ответил")
+        list_label.setStyleSheet(f"color:{MUTED}; font-weight:bold; letter-spacing:1px;")
+        left_lay.addWidget(list_label)
+        replies_list = QListWidget()
+        replies_list.setStyleSheet(
+            f"QListWidget {{ background:rgba(10,8,20,0.6); color:{TEXT}; "
+            f"border:1px solid {BORDER}; border-radius:10px; }}"
+            f"QListWidget::item {{ padding:8px; border-bottom:1px solid {BORDER}; }}"
+            f"QListWidget::item:selected {{ background:#22d3ee; color:#070710; }}")
+        left_lay.addWidget(replies_list, 1)
+        split.addWidget(left)
+
+        # --- правая панель: полный текст ответа ---
+        right = QWidget()
+        right_lay = QVBoxLayout(right)
+        right_lay.setContentsMargins(0, 0, 0, 0)
+        right_lay.setSpacing(6)
+        detail_label = QLabel("Текст ответа")
+        detail_label.setStyleSheet(f"color:{MUTED}; font-weight:bold; letter-spacing:1px;")
+        right_lay.addWidget(detail_label)
+        detail = QTextEdit()
+        detail.setReadOnly(True)
+        detail.setStyleSheet(
+            f"background:rgba(10,8,20,0.6); color:{TEXT}; "
+            f"border:1px solid {BORDER}; border-radius:10px; padding:10px;")
+        detail.setFont(QFont("Segoe UI", 11))
+        right_lay.addWidget(detail, 1)
+        split.addWidget(right)
+        split.setSizes([420, 600])
+
+        # полные данные (без обрезки) храним отдельно от виджета списка
+        self._replies_cache = []
+
+        def show_detail(idx):
+            if 0 <= idx < len(self._replies_cache):
+                r = self._replies_cache[idx]
+                head = (f"ID: {r['id']}\nURL: {r['url'] or '-'}\n"
+                        f"Email: {r['email'] or '-'}\nСтатус: {r['status']}\n")
+                notes = (r["notes"] or "").strip()
+                body = notes if notes else "(пусто - текст ответа не сохранён)"
+                detail.setText(head + "\n--- текст ответа ---\n" + body)
 
         def load_replies():
             try:
@@ -1173,24 +1209,20 @@ class GordonDesktop(QMainWindow):
                 conn.close()
             except Exception:
                 rows = []
-            tbl.setRowCount(len(rows))
-            for i, r in enumerate(rows):
-                vals = [str(r["id"]), r["url"] or "", r["email"] or "",
-                        r["status"], (r["notes"] or "")[:120]]
-                for c, v in enumerate(vals):
-                    item = QTableWidgetItem(str(v))
-                    if c == 3:
-                        col = STATUS_COLORS.get(r["status"], MUTED)
-                        item.setBackground(QColor(col))
-                        item.setForeground(QColor("#0f1115"))
-                        item.setFont(QFont("Segoe UI", 9, QFont.Bold))
-                    tbl.setItem(i, c, item)
-            # подгоним ширину под содержимое после загрузки
-            tbl.resizeColumnsToContents()
-            tbl.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
-            tbl.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
-            tbl.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
+            self._replies_cache = [dict(r) for r in rows]
+            replies_list.clear()
+            for r in rows:
+                item = QListWidgetItem(
+                    f"{r['status'].upper()}  {r['url'] or '-'}\n{r['email'] or '-'}")
+                replies_list.addItem(item)
+            detail.clear()
+            if rows:
+                replies_list.setCurrentRow(0)
+                show_detail(0)
+            else:
+                detail.setPlainText("Пока нет ответов (replied / hired).")
 
+        replies_list.currentRowChanged.connect(show_detail)
         load_replies()
 
         # кнопки
