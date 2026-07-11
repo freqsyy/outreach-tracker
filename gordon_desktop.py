@@ -28,7 +28,7 @@ from PySide6.QtWidgets import (
     QDialog, QTextEdit, QPlainTextEdit, QMessageBox, QInputDialog, QScrollArea,
     QSplitter, QHeaderView, QStyle,
 )
-from PySide6.QtCore import Qt, QThread, QTimer, Signal
+from PySide6.QtCore import Qt, QThread, QTimer, Signal, Property
 from PySide6.QtGui import QFont, QColor, QIcon, QGuiApplication
 
 # ---------------------------------------------------------------------------
@@ -44,22 +44,27 @@ GORDON = os.path.join(HERE, "gordon.py")
 SEND_NOW = os.path.join(HERE, "send_now.py")
 
 # ---------------------------------------------------------------------------
-# Палитра (тёмная тема)
+# Палитра (Неон Cyber)
 # ---------------------------------------------------------------------------
-BG = "#0f1115"
-PANEL = "#171a21"
-PANEL2 = "#1f242e"
-ACCENT = "#4f9dff"
+BG = "#070710"            # глубокий чёрный
+BG2 = "#0d0a1a"           # градиент вниз
+PANEL = "rgba(20,18,38,0.65)"
+PANEL2 = "rgba(30,28,52,0.75)"
+NEON_PURPLE = "#a855f7"
+NEON_CYAN = "#22d3ee"
+NEON_PINK = "#f472b6"
+ACCENT = NEON_CYAN
 TEXT = "#e6e6e6"
 MUTED = "#8a93a3"
+BORDER = "#2a2440"
 
 STATUS_COLORS = {
-    "pending": "#6b7280",   # серый
-    "sent": "#4f9dff",      # синий
-    "replied": "#22c55e",   # зелёный
-    "hired": "#f5c518",     # золотой
-    "rejected": "#ef4444",  # красный
-    "bounced": "#f97316",   # оранжевый
+    "pending": "#64748b",   # серо-голубой
+    "sent": "#4f9dff",      # ярко-циан/синий
+    "replied": "#22c55e",   # неон-зелёный
+    "hired": "#f5c518",     # золотой неон
+    "rejected": "#ff4d6d",  # неон-красный
+    "bounced": "#fb923c",   # неон-оранжевый
 }
 
 # Глобально: utf-8, чтобы кириллица не плыла в консоли Windows
