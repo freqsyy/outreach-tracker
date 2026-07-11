@@ -880,8 +880,11 @@ class GordonDesktop(QMainWindow):
                     item.setBackground(color)
                     item.setForeground(QColor("#0f1115"))
                     item.setFont(QFont("Segoe UI", 9, QFont.Bold))
-                elif r["id"] in self._fresh_sent:  # свежеотправленное — зелёная подсветка
-                    item.setBackground(QColor("#16361f"))
+                elif r["id"] in self._fresh_sent:  # свежеотправленное — неон-зелёное, затухает
+                    age = now - self._fresh_sent[r["id"]]
+                    frac = max(0.0, min(1.0, 1.0 - age / 15.0))
+                    alpha = int(60 + 195 * frac)
+                    item.setBackground(QColor(34, 197, 94, alpha))
                 self.table.setItem(i, c, item)
         self.table.resizeColumnsToContents()
         self.table.setColumnWidth(1, max(220, self.table.columnWidth(1)))

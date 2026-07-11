@@ -92,3 +92,14 @@ def test_table_style_neon(qapp):
     s = w._table_style()
     assert g.BORDER in s
     assert "#22d3ee" in s or "qlineargradient" in s
+
+
+def test_fresh_row_fades(qapp):
+    w = g.GordonDesktop()
+    # эмулируем свежую отправку (id, который вряд ли есть в БД) 8 секунд назад
+    w._fresh_sent = {999999: __import__("time").time() - 8}
+    # проверяем, что метод не падает при наличии свежей подсветки
+    try:
+        w.refresh_table()
+    except Exception as e:
+        raise AssertionError(f"refresh_table упал: {e}")
