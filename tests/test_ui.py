@@ -77,3 +77,18 @@ def test_main_window_builds(qapp):
     assert len(w.cards) >= 9
     assert isinstance(w.cards["Sent"], g.NeonCard)
     assert isinstance(w.btn_start, g.NeonButton)
+
+
+def test_combo_style_neon_border(qapp):
+    w = g.GordonDesktop()
+    s = w._combo_style()
+    assert "qlineargradient" not in s  # должен быть плоский неон-бордер
+    assert g.BORDER in s
+    assert "rgba(34,211,238" in s or "#22d3ee" in s  # циан-акцент в выпадашке
+
+
+def test_table_style_neon(qapp):
+    w = g.GordonDesktop()
+    s = w._table_style()
+    assert g.BORDER in s
+    assert "#22d3ee" in s or "qlineargradient" in s

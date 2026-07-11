@@ -804,21 +804,26 @@ class GordonDesktop(QMainWindow):
 
     # ----- стили -----
     def _combo_style(self):
-        return (f"QComboBox {{ background:{PANEL2}; color:{TEXT}; border:1px solid #2c3340; "
-                f"border-radius:6px; padding:5px; }}"
-                f"QComboBox QAbstractItemView {{ background:{PANEL}; color:{TEXT}; }}")
+        return (f"QComboBox {{ background:{PANEL2}; color:{TEXT}; "
+                f"border:1px solid {BORDER}; border-radius:8px; padding:6px; }}"
+                f"QComboBox:hover {{ border:1px solid #22d3ee; }}"
+                f"QComboBox QAbstractItemView {{ background:#14122a; color:{TEXT}; "
+                f"selection-background-color:#22d3ee; }}"
+                f"QComboBox::drop-down {{ border:none; }}")
 
     def _edit_style(self):
-        return (f"QLineEdit {{ background:{PANEL2}; color:{TEXT}; border:1px solid #2c3340; "
-                f"border-radius:6px; padding:6px; }}")
+        return (f"QLineEdit {{ background:{PANEL2}; color:{TEXT}; "
+                f"border:1px solid {BORDER}; border-radius:8px; padding:7px; }}"
+                f"QLineEdit:focus {{ border:1px solid #22d3ee; }}")
 
     def _table_style(self):
-        return (f"QTableWidget {{ background:{BG}; color:{TEXT}; gridline-color:#222831; "
-                f"border:1px solid #262b36; border-radius:8px; }}"
-                f"QHeaderView::section {{ background:{PANEL}; color:{MUTED}; "
-                f"border:none; padding:6px; }}"
-                f"QTableWidget::item {{ padding:4px; }}"
-                f"QTableWidget::item:selected {{ background:{ACCENT}; color:#0f1115; }}")
+        return (f"QTableWidget {{ background:rgba(10,8,20,0.6); color:{TEXT}; "
+                f"gridline-color:{BORDER}; border:1px solid {BORDER}; "
+                f"border-radius:10px; }}"
+                f"QHeaderView::section {{ background:#14122a; color:{MUTED}; "
+                f"border:none; padding:7px; }}"
+                f"QTableWidget::item {{ padding:5px; }}"
+                f"QTableWidget::item:selected {{ background:#22d3ee; color:#070710; }}")
 
     # ----- обновления -----
     def refresh_all(self):
