@@ -575,3 +575,49 @@
 [2026-07-11 13:52:42] [BOUNCE] Site #181 -> BOUNCED (mertvyy adres)
 [2026-07-11 13:52:42] [BOUNCE] Bounce-check zavershen. Pomacheno mertvyh: [14, 24, 57, 144, 148, 150, 152, 160, 181]
 [2026-07-11 13:52:43] [GORDON] GORDON: cikl zavershen.
+[2026-07-11 19:21:04] [GORDON] GORDON: nachalo cikla.
+[2026-07-11 19:21:04] [GORDON] === ZAPUSK agent_parser.py ===
+[2026-07-11 19:21:04] [PARSER] Start parser. Url v spiske: 1
+[2026-07-11 19:21:07] [PARSER] [!] Site already exists: https://burvin.by/
+[2026-07-11 19:21:07] [PARSER]    ID: 1
+[2026-07-11 19:21:07] [PARSER] Parser zavershen.
+[2026-07-11 19:21:07] [GORDON] === ZAPUSK agent_sender.py ===
+[2026-07-11 19:21:07] [SENDER] Limity: dnevnoj=42 (warmup=5), za progon=2
+[2026-07-11 19:21:07] [SENDER] Sluchaynyy start cherez 311s
+[2026-07-11 19:26:18] [SENDER] Otpravka #99 -> smm@conte.by cherez ndndnsnsndnsn2@gmail.com
+[2026-07-11 19:26:19] [SENDER] OK otpravleno #99
+[2026-07-11 19:26:19] [SENDER] Pauza do sleduyuschego pisma: 386s (sluchayno)
+[2026-07-11 19:32:53] [SENDER] Otpravka #100 -> zakaz@belgracia.by cherez qhqh0457@gmail.com
+[2026-07-11 19:32:54] [SENDER] OK otpravleno #100
+[2026-07-11 19:33:02] [SENDER] Limit: dnevnoj 8/42 ili za progon 2/2
+[2026-07-11 19:33:02] [SENDER] Sender zavershen. Otpravleno v etom progone: 2
+[2026-07-11 19:33:02] [GORDON] === ZAPUSK agent_recorder.py ===
+[2026-07-11 19:33:03] [RECORDER] Net ruchnyh otvetov (gordon_responses.txt pust).
+[2026-07-11 19:33:03] [RECORDER] IMAP- pollling VKLYUCHEN. Proveryaem vhodyaschie otvetov...
+[2026-07-11 19:33:12] [RECORDER] IMAP: novyh otvetov net.
+[2026-07-11 19:33:12] [GORDON] === ZAPUSK agent_bounce.py ===
+[2026-07-11 19:33:14] [BOUNCE] BAUNS po #14 (v romanjeyaleksej@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@proff-remont.by']
+[2026-07-11 19:33:14] [BOUNCE] BAUNS po #181 (v romanjeyaleksej@gmail.com): from=mailer-daemon@googlemail.com | addr=['13635.300@2x.jpg']
+[2026-07-11 19:33:14] [BOUNCE] BAUNS po #144 (v romanjeyaleksej@gmail.com): from=mailer-daemon@googlemail.com | addr=['example@mail.ru']
+[2026-07-11 19:33:16] [BOUNCE] BAUNS po #14 (v ndndnsnsndnsn2@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@proff-remont.by']
+[2026-07-11 19:33:17] [BOUNCE] BAUNS po #148 (v ndndnsnsndnsn2@gmail.com): from=mailer-daemon@googlemail.com | addr=['sprite@x2.png']
+[2026-07-11 19:33:23] [BOUNCE] BAUNS po #24 (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@shopbyshop.by']
+[2026-07-11 19:33:24] [BOUNCE] BAUNS po #152 (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['u-a0ed4163eda1cc30018630c74d7f954b@2x.png']
+[2026-07-11 19:33:26] [BOUNCE] BAUNS po #57 (v ususysjq@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@grillerfood.by']
+[2026-07-11 19:33:30] [BOUNCE] BAUNS po #160 (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['rating@mail.ru']
+[2026-07-11 19:33:31] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['jzkapkfyshbefhuagkdwksdjs@gmail.com', 'support@clypy.app']
+[2026-07-11 19:33:31] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['exapmle@armyfit.ru', 'jzkapkfyshbefhuagkdwksdjs@gmail.com']
+[2026-07-11 19:33:36] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['jzkapkfyshbefhuagkdwksdjs@gmail.com', 'support@clypy.app']
+[2026-07-11 19:33:36] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['exapmle@armyfit.ru', 'jzkapkfyshbefhuagkdwksdjs@gmail.com']
+[2026-07-11 19:33:37] [BOUNCE] BAUNS po #150 (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@corp.mail.ru | addr=['mail@mail.ru']
+[2026-07-11 19:33:37] [BOUNCE] Site #14 -> BOUNCED (mertvyy adres)
+[2026-07-11 19:33:37] [BOUNCE] Site #24 -> BOUNCED (mertvyy adres)
+[2026-07-11 19:33:37] [BOUNCE] Site #57 -> BOUNCED (mertvyy adres)
+[2026-07-11 19:33:37] [BOUNCE] Site #144 -> BOUNCED (mertvyy adres)
+[2026-07-11 19:33:37] [BOUNCE] Site #148 -> BOUNCED (mertvyy adres)
+[2026-07-11 19:33:37] [BOUNCE] Site #150 -> BOUNCED (mertvyy adres)
+[2026-07-11 19:33:38] [BOUNCE] Site #152 -> BOUNCED (mertvyy adres)
+[2026-07-11 19:33:38] [BOUNCE] Site #160 -> BOUNCED (mertvyy adres)
+[2026-07-11 19:33:38] [BOUNCE] Site #181 -> BOUNCED (mertvyy adres)
+[2026-07-11 19:33:38] [BOUNCE] Bounce-check zavershen. Pomacheno mertvyh: [14, 24, 57, 144, 148, 150, 152, 160, 181]
+[2026-07-11 19:33:38] [GORDON] GORDON: cikl zavershen.
