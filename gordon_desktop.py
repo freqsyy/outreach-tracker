@@ -1133,7 +1133,7 @@ class GordonDesktop(QMainWindow):
         """Окно просмотра ответов + кнопка проверки IMAP (agent_recorder.py)."""
         dlg = QDialog(self)
         dlg.setWindowTitle("📥 Ответы от людей")
-        dlg.resize(640, 560)
+        dlg.showFullScreen()
         dlg.setStyleSheet(f"QDialog {{ background:{BG}; color:{TEXT}; }}")
         lay = QVBoxLayout(dlg)
         lay.setContentsMargins(14, 14, 14, 14)
@@ -1153,8 +1153,14 @@ class GordonDesktop(QMainWindow):
         tbl.setHorizontalHeaderLabels(["ID", "URL", "Email", "Status", "Notes"])
         tbl.setEditTriggers(QTableWidget.NoEditTriggers)
         tbl.setStyleSheet(self._table_style())
+        # ID и Status - узкие фикс, остальное тянется, чтобы email и notes
+        # были видны целиком (иначе "кто ответил" обрезается)
+        tbl.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         tbl.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+        tbl.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+        tbl.horizontalHeader().setSectionResizeMode(3, QHeaderView.ResizeToContents)
         tbl.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
+        tbl.setMinimumWidth(640)
         lay.addWidget(tbl, 1)
 
         def load_replies():
@@ -1179,6 +1185,11 @@ class GordonDesktop(QMainWindow):
                         item.setForeground(QColor("#0f1115"))
                         item.setFont(QFont("Segoe UI", 9, QFont.Bold))
                     tbl.setItem(i, c, item)
+            # подгоним ширину под содержимое после загрузки
+            tbl.resizeColumnsToContents()
+            tbl.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
+            tbl.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
+            tbl.horizontalHeader().setSectionResizeMode(4, QHeaderView.Stretch)
 
         load_replies()
 
