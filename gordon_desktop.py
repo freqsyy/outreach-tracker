@@ -31,6 +31,7 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QThread, QTimer, Signal, Property, QPropertyAnimation
 from PySide6.QtGui import (
     QFont, QColor, QIcon, QGuiApplication, QPainter, QLinearGradient, QPen,
+    QPalette,
 )
 
 # ---------------------------------------------------------------------------
@@ -793,7 +794,7 @@ class GordonDesktop(QMainWindow):
             ["ID", "URL", "Email", "Telegram", "Status", "Tags", "Earned", "Updated"])
         self.table.setSelectionBehavior(QTableWidget.SelectRows)
         self.table.setEditTriggers(QTableWidget.NoEditTriggers)
-        self.table.setAlternatingRowColors(True)
+        self.table.setAlternatingRowColors(False)
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.Stretch)
         self.table.horizontalHeader().setSectionResizeMode(2, QHeaderView.Stretch)
         self.table.doubleClicked.connect(self.open_details)
@@ -1234,6 +1235,21 @@ def main():
     # Fusion уважает QSS-стили (дефолтный WindowsVista на Windows игнорит
     # background-градиенты и оставляет белый фон)
     app.setStyle("Fusion")
+    # Тёмная палитра: убирает системно-белый фон (Base/Window/AlternateBase)
+    # на Windows - иначе даже при Fusion карточки/вьюпорты/строки белеют.
+    pal = QPalette()
+    pal.setColor(QPalette.Window, QColor(BG))
+    pal.setColor(QPalette.WindowText, QColor(TEXT))
+    pal.setColor(QPalette.Base, QColor("#14122a"))
+    pal.setColor(QPalette.AlternateBase, QColor("#1b1830"))
+    pal.setColor(QPalette.Text, QColor(TEXT))
+    pal.setColor(QPalette.Button, QColor("#1e1c34"))
+    pal.setColor(QPalette.ButtonText, QColor(TEXT))
+    pal.setColor(QPalette.Highlight, QColor(NEON_CYAN))
+    pal.setColor(QPalette.HighlightedText, QColor("#070710"))
+    pal.setColor(QPalette.ToolTipBase, QColor("#14122a"))
+    pal.setColor(QPalette.ToolTipText, QColor(TEXT))
+    app.setPalette(pal)
     app.setStyleSheet(
         f"QMainWindow {{ background:{BG}; color:{TEXT}; }}"
         f"QToolTip {{ background:#14122a; color:{TEXT}; border:1px solid {BORDER}; }}")
