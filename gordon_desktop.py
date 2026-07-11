@@ -230,6 +230,7 @@ class NeonCard(QWidget):
         super().__init__(parent)
         self._color = QColor(color)
         self._flash = 0.0
+        self.setStyleSheet("background:transparent;")
         self.setFixedHeight(86)
         self.setMinimumWidth(112)
         lay = QVBoxLayout(self)
@@ -683,7 +684,8 @@ class GordonDesktop(QMainWindow):
         dash_scroll.setVerticalScrollBarPolicy(Qt.ScrollBarAlwaysOff)
         dash_scroll.setFixedHeight(104)
         dash_scroll.setStyleSheet(
-            f"QScrollArea {{ background:transparent; border:none; }}")
+            f"QScrollArea {{ background:transparent; border:none; }}"
+            f"QScrollArea > QWidget {{ background:transparent; }}")
         dash_wrap = QWidget()
         dash_wrap.setLayout(dash)
         dash_scroll.setWidget(dash_wrap)
