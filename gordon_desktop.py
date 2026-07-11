@@ -587,6 +587,24 @@ class SiteDetailDialog(QDialog):
 # ---------------------------------------------------------------------------
 # Главное окно
 # ---------------------------------------------------------------------------
+class RootWidget(QWidget):
+    """Корень с гарантированно тёмным неон-градиентом фона.
+
+    Рисуем фон через paintEvent, а не через QSS: на Windows дефолтный
+    стиль (WindowsVista) игнорирует background в QSS, и виджет остаётся
+    белым. Ручная отрисовка не зависит от стиля приложения.
+    """
+
+    def paintEvent(self, e):
+        p = QPainter(self)
+        p.setRenderHint(QPainter.Antialiasing)
+        grad = QLinearGradient(0, 0, 0, self.height())
+        grad.setColorAt(0, QColor(BG))
+        grad.setColorAt(1, QColor(BG2))
+        p.fillRect(self.rect(), grad)
+        super().paintEvent(e)
+
+
 class GordonDesktop(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -627,11 +645,7 @@ class GordonDesktop(QMainWindow):
 
     # ----- построение UI -----
     def _build_ui(self):
-        root = QWidget()
-        root.setObjectName("root")
-        root.setStyleSheet(
-            "QWidget#root { background: qlineargradient("
-            "x1:0, y1:0, x2:0, y2:1, stop:0 #070710, stop:1 #0d0a1a); }")
+        root = RootWidget()
         self.setCentralWidget(root)
         main = QVBoxLayout(root)
         main.setContentsMargins(12, 12, 12, 12)
@@ -1217,6 +1231,9 @@ class GordonDesktop(QMainWindow):
 # ---------------------------------------------------------------------------
 def main():
     app = QApplication(sys.argv)
+    # Fusion уважает QSS-стили (дефолтный WindowsVista на Windows игнорит
+    # background-градиенты и оставляет белый фон)
+    app.setStyle("Fusion")
     app.setStyleSheet(
         f"QMainWindow {{ background:{BG}; color:{TEXT}; }}"
         f"QToolTip {{ background:#14122a; color:{TEXT}; border:1px solid {BORDER}; }}")
