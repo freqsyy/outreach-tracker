@@ -880,7 +880,7 @@ class GordonDesktop(QMainWindow):
                     item.setBackground(color)
                     item.setForeground(QColor("#0f1115"))
                     item.setFont(QFont("Segoe UI", 9, QFont.Bold))
-                elif r["id"] in self._fresh_sent:  # свежеотправленное — неон-зелёное, затухает
+                elif r["id"] in self._fresh_sent:  # свежеотправленное - неон-зелёное, затухает
                     age = now - self._fresh_sent[r["id"]]
                     frac = max(0.0, min(1.0, 1.0 - age / 15.0))
                     alpha = int(60 + 195 * frac)
