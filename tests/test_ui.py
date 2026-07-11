@@ -38,3 +38,17 @@ def test_neon_title_gradient_text(qapp):
     t = g.NeonTitle("ПУЛЬТ ГОРДОНА")
     assert t._text == "ПУЛЬТ ГОРДОНА"
     assert isinstance(t.graphicsEffect(), QGraphicsDropShadowEffect)
+
+
+def test_neon_button_has_glow(qapp):
+    b = g.NeonButton("Запустить", g.NEON_CYAN)
+    assert isinstance(b.graphicsEffect(), QGraphicsDropShadowEffect)
+
+
+def test_neon_button_hover_increases_blur(qapp):
+    b = g.NeonButton("Запустить", g.NEON_CYAN)
+    base = b.graphicsEffect().blurRadius()
+    b.enterEvent(None)
+    assert b.graphicsEffect().blurRadius() > base
+    b.leaveEvent(None)
+    assert b.graphicsEffect().blurRadius() == base

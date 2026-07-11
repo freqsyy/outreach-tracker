@@ -287,6 +287,46 @@ class NeonCard(QWidget):
 
 
 # ---------------------------------------------------------------------------
+# Неон-кнопка (градиент + свечение, разгоняется на hover/click)
+# ---------------------------------------------------------------------------
+class NeonButton(QPushButton):
+    def __init__(self, text="", base=NEON_CYAN, parent=None):
+        super().__init__(text, parent)
+        self._base = QColor(base)
+        self._glow = QGraphicsDropShadowEffect(self)
+        self._glow.setBlurRadius(12)
+        self._glow.setColor(self._base)
+        self._glow.setOffset(0, 0)
+        self.setGraphicsEffect(self._glow)
+        self.setMinimumHeight(38)
+        self._style()
+
+    def _style(self):
+        c = self._base
+        self.setStyleSheet(
+            f"QPushButton {{ background:{c.name()}; color:#070710; font-weight:bold; "
+            f"border:none; border-radius:10px; padding:10px; }}"
+            f"QPushButton:disabled {{ background:{PANEL2}; color:{MUTED}; }}"
+        )
+
+    def enterEvent(self, e):
+        self._glow.setBlurRadius(28)
+        super().enterEvent(e)
+
+    def leaveEvent(self, e):
+        self._glow.setBlurRadius(12)
+        super().leaveEvent(e)
+
+    def mousePressEvent(self, e):
+        self._glow.setBlurRadius(36)
+        super().mousePressEvent(e)
+
+    def mouseReleaseEvent(self, e):
+        self._glow.setBlurRadius(12)
+        super().mouseReleaseEvent(e)
+
+
+# ---------------------------------------------------------------------------
 # Поток запуска Гордона (gordon.py / send_now.py)
 # ---------------------------------------------------------------------------
 class GordonRunner(QThread):
