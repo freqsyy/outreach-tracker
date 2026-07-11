@@ -20,7 +20,18 @@ import sys
 import sqlite3
 import subprocess
 from datetime import datetime
+from email.header import make_header, decode_header
 from urllib.parse import urlparse
+
+
+def _decode_mime(text):
+    """Раскодирует RFC2047-закодированные слова (например =?UTF-8?Q?...?=)."""
+    if not text:
+        return text
+    try:
+        return str(make_header(decode_header(text)))
+    except Exception:
+        return text
 
 from PySide6.QtWidgets import (
     QApplication, QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel,
@@ -1195,7 +1206,7 @@ class GordonDesktop(QMainWindow):
                 r = self._replies_cache[idx]
                 head = (f"ID: {r['id']}\nURL: {r['url'] or '-'}\n"
                         f"Email: {r['email'] or '-'}\nСтатус: {r['status']}\n")
-                notes = (r["notes"] or "").strip()
+                notes = _decode_mime((r["notes"] or "").strip())
                 body = notes if notes else "(пусто - текст ответа не сохранён)"
                 detail.setText(head + "\n--- текст ответа ---\n" + body)
 
