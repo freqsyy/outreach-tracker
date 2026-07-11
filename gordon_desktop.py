@@ -590,7 +590,7 @@ class GordonDesktop(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Пульт Гордона")
-        self.resize(1280, 820)
+        self.showFullScreen()
         try:
             icon = QApplication.style().standardIcon(
                 QStyle.StandardPixmap.SP_ComputerIcon)
@@ -826,6 +826,7 @@ class GordonDesktop(QMainWindow):
                 f"border-radius:10px; }}"
                 f"QHeaderView::section {{ background:#14122a; color:{MUTED}; "
                 f"border:none; padding:7px; }}"
+                f"QHeaderView::corner {{ background:#14122a; border:none; }}"
                 f"QTableWidget::item {{ padding:5px; }}"
                 f"QTableWidget::item:selected {{ background:#22d3ee; color:#070710; }}")
 
@@ -1218,7 +1219,6 @@ def main():
         f"QMainWindow {{ background:{BG}; color:{TEXT}; }}"
         f"QToolTip {{ background:#14122a; color:{TEXT}; border:1px solid {BORDER}; }}")
     win = GordonDesktop()
-    win.show()
     sys.exit(app.exec())
 
 

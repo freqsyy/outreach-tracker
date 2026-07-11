@@ -31,19 +31,20 @@
 ## 🛡️ ГОРДОН (главный проект, аутрич-бот)
 Папка: `C:\Users\nazar\outreach-tracker\`
 Суть: армия агентов ищет сайты, пишет разработчикам с предложением QA-тестировщика.
-- `outreach.db` — БД (SQLite), 215 сайтов. Статусы: `sent` / `pending` / `rejected` / `bounced` / `replied` / `hired`. Это ИСТИННИК — беречь, бэкапить перед git-операциями.
+- `outreach.db` — БД (SQLite), 216+ сайтов. Статусы: `sent` / `pending` / `rejected` / `bounced` / `replied` / `hired` / `review` (review = авто-найденный скаутом, не готов к рассылке, нужен ручной аппрув). Это ИСТИННИК — беречь, бэкапить перед git-операциями.
 - `audit_engine.py` — аудит сайта через Chromium CDP (порт 9222). Ранний выход после 1-го бага.
 - `agent_auditor.py` / `audit_site.py` — агент-аудитор, пишет баг в `notes` (маркер `AUDIT::`) + `audits/<domain>.md`.
 - `agent_sender.py` / `send_now.py` / `send_window.py` / `send_telegram.py` — отправка писем (Gmail, ротация 5 акков), форс-режим, оконный, ТГ-мост.
 - `agent_parser.py` — парсинг сайтов из `gordon_sources.txt` → контакты в БД.
-- `agent_recorder.py` — фиксация ответов (IMAP).
+- `agent_scout.py` — АГЕНТ 0: ищет МОЛОДЫЕ сайты (не мега) через дамп WebsiteLaunches + фильтры RDAP-возраст/upvotes → в БД как `auto-scout,fresh`, статус `review` (НЕ шлётся без ручного аппрува). SECURITY: SSRF-гарды на URL/домен. Запуск: `python agent_scout.py [--days N --limit N --dry-run]`.
+- `agent_recorder.py` — фиксация ответов (IMAP авто-поллинг ВКЛ) + ручной `gordon_responses.txt`. БАГ 2026-07-11: дубль `apply()` падал с TypeError — ПОЧИНЕНО (commit `b32a2dc`).
 - `gordon_desktop.py` — дашборд (PyQt): живая лента + кнопки агентов (парсинг/ответы).
 - `barter_gen.py` + `barter_posts.md` — авто-генерация бартер-текстов из багов (18 готовых).
 - `bridge_*.py` + `gordon_bot_worker.js` — мост ПК↔Телеграм (Cloudflare Worker + KV).
 - `sync.py` — синхронизация БД с GitHub (`pull`/`push`), `journal_mode=DELETE`.
-**СТАТУС (конец 2026-07-11):** v0.4. Отправлено 103 письма, 78 pending в очереди (Назар велел СТОП).
-**АКТУАЛЬНЫЕ ЗАДАЧИ:** пуш коммита `5fb909f` в GitHub · дозасылка 78 pending · автопостинг бартера
-(нужен Telegram-токен) · качество писем (CTA-крючок).
+**СТАТУС (конец 2026-07-11):** v0.4 + скаут + security-фиксы + письмо с CTA. Отправлено 103 письма, 78 pending в очереди (Назар велел СТОП). 14 коммитов ahead origin/main (Назар дал добро на пуш).
+**АКТУАЛЬНЫЕ ЗАДАЧИ:** ПУШ в GitHub (добро есть) · дозасылка 78 pending · автопостинг бартера
+(нужен Telegram-токен) · кнопка Scout в дашборд · #218-#222 (pending до фикса) → review.
 
 ## 🪟 МНОГООКОНОЧНОСТЬ (чтобы не было каши как 2026-07-11)
 Если открыто НЕСКОЛЬКО окон Claude Code:
