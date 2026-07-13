@@ -57,6 +57,7 @@ LETTER_PATH = os.path.join(HERE, "letter.txt")
 TRACK = os.path.join(HERE, "track.py")
 GORDON = os.path.join(HERE, "gordon.py")
 SEND_NOW = os.path.join(HERE, "send_now.py")
+SCOUT = os.path.join(HERE, "agent_scout.py")
 
 # ---------------------------------------------------------------------------
 # Палитра (Неон Cyber)
@@ -403,18 +404,19 @@ class GordonRunner(QThread):
     log_line = Signal(str)        # служебные строки приложения
     finished = Signal(int)        # код завершения
 
-    def __init__(self, script, label):
+    def __init__(self, script, label, args=None):
         super().__init__()
         self.script = script
         self.label = label
+        self.args = args or []
         self._proc = None
         self._stop = False
 
     def run(self):
         try:
-            self.log_line.emit(f"[APP] Запуск: {self.label} ({os.path.basename(self.script)})")
+            self.log_line.emit(f"[APP] Запуск: {self.label} ({os.path.basename(self.script)} {' '.join(self.args)})")
             self._proc = subprocess.Popen(
-                [sys.executable, self.script],
+                [sys.executable, self.script, *self.args],
                 cwd=HERE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                 text=True, encoding="utf-8", errors="replace", bufsize=1,
             )
@@ -622,6 +624,7 @@ class GordonDesktop(QMainWindow):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Пульт Гордона")
+        self.setMinimumSize(900, 600)
         self.showFullScreen()
         try:
             icon = QApplication.style().standardIcon(
@@ -655,6 +658,20 @@ class GordonDesktop(QMainWindow):
         self.log_timer = QTimer(self)
         self.log_timer.timeout.connect(self.tail_log)
         self.log_timer.start(1000)
+
+    # ----- F11: фуллскрин <-> оконный ресайзабельный -----
+    def keyPressEvent(self, e):
+        if e.key() == Qt.Key_F11:
+            if self.windowState() & Qt.WindowFullScreen:
+                # в оконный режим — можно тягать за края
+                self.showNormal()
+                if self.width() < 900 or self.height() < 600:
+                    self.resize(1100, 720)
+            else:
+                self.showFullScreen()
+            e.accept()
+        else:
+            super().keyPressEvent(e)
 
     # ----- построение UI -----
     def _build_ui(self):
@@ -759,11 +776,18 @@ class GordonDesktop(QMainWindow):
         agents_label = QLabel("ИНСТРУМЕНТЫ")
         agents_label.setStyleSheet(f"color:{MUTED}; font-weight:bold; letter-spacing:1px;")
         ctrl.addWidget(agents_label)
-        self.btn_parse = NeonButton("🕸 Парсинг сайтов", NEON_CYAN)
+        self.btn_parse = NeonButton("🔍 Поиск сайтов", NEON_CYAN)
         self.btn_replies = NeonButton("📥 Просмотр ответов", "#22c55e")
+        self.btn_scout = NeonButton("🛰 Скаут (проба)", NEON_PINK)
+        self.btn_parse.setToolTip("Гордон сам ищет МОЛОДЫЕ сайты (Скаут) или парсит твой список URL")
         self.btn_parse.clicked.connect(self.open_parse_menu)
         self.btn_replies.clicked.connect(self.open_replies)
+        self.btn_scout.setToolTip(
+            "Скаут: сухой прогон (dry-run) — показывает молодые сайты-кандидаты, "
+            "НИЧЕГО не пишет в БД. Безопасная разведка перед рассылкой.")
+        self.btn_scout.clicked.connect(self.run_scout_dry)
         ctrl.addWidget(self.btn_parse)
+        ctrl.addWidget(self.btn_scout)
         ctrl.addWidget(self.btn_replies)
         ctrl.addStretch(1)
         mid.addWidget(ctrl_frame)
@@ -1047,6 +1071,7 @@ class GordonDesktop(QMainWindow):
         self.btn_force.setEnabled(True)
         self.btn_stop.setEnabled(False)
         self.btn_parse.setEnabled(True)
+        self.btn_scout.setEnabled(True)
         self.btn_replies.setEnabled(True)
         # перечитываем всё по горячим следам
         self.refresh_all()
@@ -1069,26 +1094,93 @@ class GordonDesktop(QMainWindow):
         self.btn_start.setEnabled(False)
         self.btn_force.setEnabled(False)
         self.btn_parse.setEnabled(False)
+        self.btn_scout.setEnabled(False)
         self.btn_replies.setEnabled(False)
         self.btn_stop.setEnabled(True)
         self.append_log(f"[APP] {label} запущен - следите за лентой ↓")
 
+    def run_scout_dry(self):
+        """Скаут в сухом режиме (--dry-run): только показать кандидатов-молодых
+        сайтов, НИЧЕГО не пишет в БД. Безопасная разведка перед рассылкой."""
+        if self.runner and self.runner.isRunning():
+            QMessageBox.information(
+                self, "Занято",
+                "Сейчас уже работает процесс.\n"
+                "Дождитесь завершения или нажмите Стоп.")
+            return
+        self.runner = GordonRunner(SCOUT, "Скаут (dry-run)", ["--dry-run"])
+        self.runner.log_line.connect(self.append_log)
+        self.runner.finished.connect(self.on_runner_finished)
+        self.runner.start()
+        self.btn_start.setEnabled(False)
+        self.btn_force.setEnabled(False)
+        self.btn_parse.setEnabled(False)
+        self.btn_scout.setEnabled(False)
+        self.btn_replies.setEnabled(False)
+        self.btn_stop.setEnabled(True)
+        self.append_log("[APP] 🛰 Скаут (dry-run) запущен - кандидаты появятся в ленте ↓")
+
+    def _sources_already_in_db(self):
+        """True, если все URL из gordon_sources.txt уже есть в БД.
+        Парсить их впустую бессмысленно — бэкенд лишь напишет
+        'Site already exists' и ничего не добавит."""
+        try:
+            src = os.path.join(HERE, "gordon_sources.txt")
+            if not os.path.exists(src):
+                return False
+            with open(src, "r", encoding="utf-8") as f:
+                urls = [l.strip() for l in f
+                        if l.strip() and not l.strip().startswith("#")]
+            if not urls:
+                return False
+            conn = get_conn()
+            try:
+                rows = conn.execute(
+                    "SELECT url FROM sites WHERE url IN ({})".format(
+                        ",".join("?" * len(urls))), urls
+                ).fetchall()
+            finally:
+                conn.close()
+            return len(rows) == len(urls)
+        except Exception:
+            return False
+
     def open_parse_menu(self):
-        """Меню запуска парсинга сайтов."""
+        """Меню запуска поиска/парсинга сайтов.
+
+        Главное действие — СКАУТ (agent_scout.py): Гордон САМ ищет МОЛОДЫЕ
+        сайты по нашим требованиям (домен моложе ~2 лет через RDAP, не мега
+        по upvotes, только что запущенные проекты). Найденные сайты попадают
+        в БД со статусом `review` (НЕ шлются без ручного аппрува — наше правило).
+        Вторая опция — парсинг конкретного списка URL из gordon_sources.txt."""
         menu = QMessageBox(self)
-        menu.setWindowTitle("🕷 Парсинг сайтов")
+        menu.setWindowTitle("🔍 Поиск сайтов")
         menu.setText(
-            "agent_parser.py читает URL из gordon_sources.txt и вытаскивает\n"
-            "email + Telegram, добавляя их в БД как pending.\n\n"
-            "Что сделать?")
+            "Гордон может найти сайты ДВУМЯ способами:\n\n"
+            "🔍 СКАУТ — сам ищет МОЛОДЫЕ сайты (только что запущенные проекты,\n"
+            "   которым нужен QA). Фильтр по возрасту домена и популярности.\n"
+            "   Найденное попадает в БД как review (нужен твой аппрув до рассылки).\n\n"
+            "📄 ПАРСЕР — спарсить КОНКРЕТНЫЙ список URL из gordon_sources.txt.\n\n"
+            "Что запустить?")
         menu.setStyleSheet(f"QMessageBox {{ background:{BG}; color:{TEXT}; }}")
-        b_run = menu.addButton("▶ Запустить парсинг", QMessageBox.AcceptRole)
+        b_scout = menu.addButton("🔍 Искать новые сайты (Скаут)", QMessageBox.AcceptRole)
+        b_parse = menu.addButton("📄 Парсить мой список URL", QMessageBox.ActionRole)
         b_add = menu.addButton("➕ Добавить URL в источники", QMessageBox.ActionRole)
         b_view = menu.addButton("📄 Показать источники", QMessageBox.ActionRole)
         b_cancel = menu.addButton("Отмена", QMessageBox.RejectRole)
         menu.exec()
         clicked = menu.clickedButton()
-        if clicked == b_run:
+        if clicked == b_scout:
+            self._run_agent_script(
+                os.path.join(HERE, "agent_scout.py"), "Поиск сайтов (Скаут)")
+        elif clicked == b_parse:
+            if self._sources_already_in_db():
+                QMessageBox.information(
+                    self, "Парсинг не нужен",
+                    "Все URL из gordon_sources.txt уже есть в базе.\n"
+                    "Парсить нечего — сначала добавь новые сайты\n"
+                    "через «Добавить URL в источники».")
+                return
             self._run_agent_script(
                 os.path.join(HERE, "agent_parser.py"), "Парсинг сайтов")
         elif clicked == b_add:
