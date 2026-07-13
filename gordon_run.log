@@ -1661,3 +1661,74 @@
 [2026-07-13 19:51:31] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@corp.mail.ru | addr=['jzkapkfyshbefhuagkdwksdjs@gmail.com', 'mail@mail.ru']
 [2026-07-13 19:51:31] [BOUNCE] Bounce-check: novyh baunsov net. Vse adresa zhivy.
 [2026-07-13 19:51:31] [GORDON] GORDON: cikl zavershen.
+[2026-07-13 21:09:48] [GORDON] GORDON: nachalo cikla.
+[2026-07-13 21:09:48] [GORDON] === ZAPUSK agent_parser.py ===
+[2026-07-13 21:09:49] [PARSER] Start parser. Url v spiske: 1
+[2026-07-13 21:09:52] [PARSER] [!] Site already exists: https://burvin.by/
+[2026-07-13 21:09:52] [PARSER]    ID: 1
+[2026-07-13 21:09:52] [PARSER] Parser zavershen.
+[2026-07-13 21:09:52] [GORDON] === ZAPUSK agent_sender.py ===
+[2026-07-13 21:09:52] [SENDER] Limity: dnevnoj=42 (warmup=5), za progon=2
+[2026-07-13 21:09:52] [SENDER] Sluchaynyy start cherez 243s
+[2026-07-13 21:13:55] [SENDER] Otpravka #122 -> 005_22@0.75x-1-500x350.png cherez jzkapkfyshbefhuagkdwksdjs@gmail.com
+[2026-07-13 21:13:56] [SENDER] OK otpravleno #122
+[2026-07-13 21:13:56] [SENDER] Pauza do sleduyuschego pisma: 590s (sluchayno)
+[2026-07-13 21:23:54] [SENDER] Otpravka #123 -> tmanager@makey.by cherez romanjeyaleksej@gmail.com
+[2026-07-13 21:23:55] [SENDER] OK otpravleno #123
+[2026-07-13 21:24:03] [SENDER] Limit: dnevnoj 6/42 ili za progon 2/2
+[2026-07-13 21:24:03] [SENDER] Sender zavershen. Otpravleno v etom progone: 2
+[2026-07-13 21:24:03] [GORDON] === ZAPUSK agent_recorder.py ===
+[2026-07-13 21:24:03] [RECORDER] Net ruchnyh otvetov (gordon_responses.txt pust).
+[2026-07-13 21:24:03] [RECORDER] IMAP- pollling VKLYUCHEN. Proveryaem vhodyaschie otvetov...
+[2026-07-13 21:24:23] [RECORDER] IMAP: novyh otvetov net.
+[2026-07-13 21:24:23] [GORDON] === ZAPUSK agent_bounce.py ===
+[2026-07-13 21:24:32] [BOUNCE] Bauns bez sovpadeniya (v romanjeyaleksej@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@proff-remont.by', 'romanjeyaleksej@gmail.com']
+[2026-07-13 21:24:32] [BOUNCE] Bauns bez sovpadeniya (v romanjeyaleksej@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@proff-remont.by', 'romanjeyaleksej@gmail.com']
+[2026-07-13 21:24:32] [BOUNCE] Bauns bez sovpadeniya (v romanjeyaleksej@gmail.com): from=mailer-daemon@googlemail.com | addr=['13635.300@2x.jpg', 'romanjeyaleksej@gmail.com']
+[2026-07-13 21:24:32] [BOUNCE] Bauns bez sovpadeniya (v romanjeyaleksej@gmail.com): from=mailer-daemon@googlemail.com | addr=['example@mail.ru', 'romanjeyaleksej@gmail.com']
+[2026-07-13 21:24:33] [BOUNCE] Bauns bez sovpadeniya (v romanjeyaleksej@gmail.com): from=mailer-daemon@googlemail.com | addr=['romanjeyaleksej@gmail.com', 'sales@alessandroshoes.ru']
+[2026-07-13 21:24:33] [BOUNCE] Bauns bez sovpadeniya (v romanjeyaleksej@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@zaitsev-marketing.ru', 'romanjeyaleksej@gmail.com']
+[2026-07-13 21:24:33] [BOUNCE] Bauns bez sovpadeniya (v romanjeyaleksej@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@zaitsev-marketing.ru', 'romanjeyaleksej@gmail.com']
+[2026-07-13 21:24:36] [BOUNCE] Bauns bez sovpadeniya (v ndndnsnsndnsn2@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@proff-remont.by', 'ndndnsnsndnsn2@gmail.com']
+[2026-07-13 21:24:36] [BOUNCE] Bauns bez sovpadeniya (v ndndnsnsndnsn2@gmail.com): from=mailer-daemon@googlemail.com | addr=['ndndnsnsndnsn2@gmail.com', 'sprite@x2.png']
+[2026-07-13 21:24:36] [BOUNCE] Bauns bez sovpadeniya (v ndndnsnsndnsn2@gmail.com): from=mailer-daemon@googlemail.com | addr=['ndndnsnsndnsn2@gmail.com', 'u002fd84462a7656512dc954daeae96e1734e@sentry.wdo.io']
+[2026-07-13 21:24:36] [BOUNCE] Bauns bez sovpadeniya (v ndndnsnsndnsn2@gmail.com): from=mailer-daemon@googlemail.com | addr=['dot2@2x.png', 'ndndnsnsndnsn2@gmail.com']
+[2026-07-13 21:24:39] [BOUNCE] Bauns bez sovpadeniya (v ndndnsnsndnsn2@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@proff-remont.by', 'ndndnsnsndnsn2@gmail.com']
+[2026-07-13 21:24:44] [BOUNCE] Bauns bez sovpadeniya (v ndndnsnsndnsn2@gmail.com): from=mailer-daemon@googlemail.com | addr=['ndndnsnsndnsn2@gmail.com', 'sprite@x2.png']
+[2026-07-13 21:24:46] [BOUNCE] Bauns bez sovpadeniya (v ndndnsnsndnsn2@gmail.com): from=mailer-daemon@googlemail.com | addr=['ndndnsnsndnsn2@gmail.com', 'u002fd84462a7656512dc954daeae96e1734e@sentry.wdo.io']
+[2026-07-13 21:24:47] [BOUNCE] Bauns bez sovpadeniya (v ndndnsnsndnsn2@gmail.com): from=mailer-daemon@googlemail.com | addr=['dot2@2x.png', 'ndndnsnsndnsn2@gmail.com']
+[2026-07-13 21:24:51] [BOUNCE] Bauns bez sovpadeniya (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@shopbyshop.by', 'qhqh0457@gmail.com']
+[2026-07-13 21:24:51] [BOUNCE] Bauns bez sovpadeniya (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['qhqh0457@gmail.com', 'u-a0ed4163eda1cc30018630c74d7f954b@2x.png']
+[2026-07-13 21:24:52] [BOUNCE] Bauns bez sovpadeniya (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['qhqh0457@gmail.com', 'test@test-new-site-12345.by']
+[2026-07-13 21:24:52] [BOUNCE] Bauns bez sovpadeniya (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['ctc-media@3x.png', 'qhqh0457@gmail.com']
+[2026-07-13 21:24:52] [BOUNCE] Bauns bez sovpadeniya (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['qhqh0457@gmail.com', 'u-b42e69b1f9a4303cfa18d049830ed6f4@2x.png']
+[2026-07-13 21:24:52] [BOUNCE] Bauns bez sovpadeniya (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['hello@libraryagents.com', 'qhqh0457@gmail.com']
+[2026-07-13 21:24:52] [BOUNCE] Bauns bez sovpadeniya (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['hello@libraryagents.com', 'qhqh0457@gmail.com']
+[2026-07-13 21:24:54] [BOUNCE] Bauns bez sovpadeniya (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@shopbyshop.by', 'qhqh0457@gmail.com']
+[2026-07-13 21:24:57] [BOUNCE] Bauns bez sovpadeniya (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['qhqh0457@gmail.com', 'u-a0ed4163eda1cc30018630c74d7f954b@2x.png']
+[2026-07-13 21:24:58] [BOUNCE] Bauns bez sovpadeniya (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['qhqh0457@gmail.com', 'test@test-new-site-12345.by']
+[2026-07-13 21:24:59] [BOUNCE] Bauns bez sovpadeniya (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['ctc-media@3x.png', 'qhqh0457@gmail.com']
+[2026-07-13 21:25:00] [BOUNCE] Bauns bez sovpadeniya (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['qhqh0457@gmail.com', 'u-b42e69b1f9a4303cfa18d049830ed6f4@2x.png']
+[2026-07-13 21:25:00] [BOUNCE] Bauns bez sovpadeniya (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['hello@libraryagents.com', 'qhqh0457@gmail.com']
+[2026-07-13 21:25:00] [BOUNCE] Bauns bez sovpadeniya (v qhqh0457@gmail.com): from=mailer-daemon@googlemail.com | addr=['hello@libraryagents.com', 'qhqh0457@gmail.com']
+[2026-07-13 21:25:03] [BOUNCE] Bauns bez sovpadeniya (v ususysjq@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@grillerfood.by', 'ususysjq@gmail.com']
+[2026-07-13 21:25:05] [BOUNCE] Bauns bez sovpadeniya (v ususysjq@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@grillerfood.by', 'ususysjq@gmail.com']
+[2026-07-13 21:25:14] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['jzkapkfyshbefhuagkdwksdjs@gmail.com', 'rating@mail.ru']
+[2026-07-13 21:25:15] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['jzkapkfyshbefhuagkdwksdjs@gmail.com', 'support@clypy.app']
+[2026-07-13 21:25:15] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['exapmle@armyfit.ru', 'jzkapkfyshbefhuagkdwksdjs@gmail.com']
+[2026-07-13 21:25:15] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@one-tattoo.ru', 'jzkapkfyshbefhuagkdwksdjs@gmail.com']
+[2026-07-13 21:25:15] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['%20don.alfa-k@yandex.ru', 'jzkapkfyshbefhuagkdwksdjs@gmail.com']
+[2026-07-13 21:25:15] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['3266.255@2x.webp', 'jzkapkfyshbefhuagkdwksdjs@gmail.com']
+[2026-07-13 21:25:15] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@easymebel.by', 'jzkapkfyshbefhuagkdwksdjs@gmail.com']
+[2026-07-13 21:25:15] [BOUNCE] BAUNS po #122 (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['005_22@0.75x-1-500x350.png']
+[2026-07-13 21:25:18] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['jzkapkfyshbefhuagkdwksdjs@gmail.com', 'rating@mail.ru']
+[2026-07-13 21:25:19] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['jzkapkfyshbefhuagkdwksdjs@gmail.com', 'support@clypy.app']
+[2026-07-13 21:25:19] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['exapmle@armyfit.ru', 'jzkapkfyshbefhuagkdwksdjs@gmail.com']
+[2026-07-13 21:25:19] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@one-tattoo.ru', 'jzkapkfyshbefhuagkdwksdjs@gmail.com']
+[2026-07-13 21:25:20] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['%20don.alfa-k@yandex.ru', 'jzkapkfyshbefhuagkdwksdjs@gmail.com']
+[2026-07-13 21:25:20] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['3266.255@2x.webp', 'jzkapkfyshbefhuagkdwksdjs@gmail.com']
+[2026-07-13 21:25:20] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@googlemail.com | addr=['info@easymebel.by', 'jzkapkfyshbefhuagkdwksdjs@gmail.com']
+[2026-07-13 21:25:21] [BOUNCE] Bauns bez sovpadeniya (v jzkapkfyshbefhuagkdwksdjs@gmail.com): from=mailer-daemon@corp.mail.ru | addr=['jzkapkfyshbefhuagkdwksdjs@gmail.com', 'mail@mail.ru']
+[2026-07-13 21:25:21] [BOUNCE] Site #122 -> BOUNCED (mertvyy adres)
+[2026-07-13 21:25:21] [BOUNCE] Bounce-check zavershen. Pomacheno mertvyh: [122]
+[2026-07-13 21:25:21] [GORDON] GORDON: cikl zavershen.
