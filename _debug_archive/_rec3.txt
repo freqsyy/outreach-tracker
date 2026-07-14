@@ -1,0 +1,23 @@
+[2026-07-16 22:09:51] [RECORDER] Net ruchnyh otvetov (gordon_responses.txt pust).
+[2026-07-16 22:09:51] [RECORDER] IMAP- pollling VKLYUCHEN. Proveryaem otvety po cepochke pisem...
+[2026-07-16 22:09:52] [RECORDER] Sent-box dlya romanjeyaleksej@gmail.com: [Gmail]/&BB4EQgQ,BEAEMAQyBDsENQQ9BD0ESwQ1-
+[2026-07-16 22:10:21] [RECORDER] Sent-box dlya ndndnsnsndnsn2@gmail.com: [Gmail]/Sent Mail
+[2026-07-16 22:10:33] [RECORDER] Sent-box dlya qhqh0457@gmail.com: [Gmail]/Sent Mail
+[2026-07-16 22:10:59] [RECORDER] Sent-box dlya ususysjq@gmail.com: [Gmail]/Sent Mail
+[2026-07-16 22:11:21] [RECORDER] Sent-box dlya jzkapkfyshbefhuagkdwksdjs@gmail.com: [Gmail]/Sent Mail
+[2026-07-16 22:11:45] [RECORDER] Sent-map postroena: 0 nashih pisem s Message-ID.
+[2026-07-16 22:12:42] [RECORDER] NE-matchnutyy otvet (net v BDb / ne Reply): info@make.com | 'Your GTM stack should be catching stalling deals. Here's how ?'
+[2026-07-16 22:12:42] [RECORDER] NE-matchnutyy otvet (net v BDb / ne Reply): info@make.com | 'Meet Claude Fable 5 + smarter search across Make ??'
+[2026-07-16 22:12:42] [RECORDER] NE-matchnutyy otvet (net v BDb / ne Reply): googleplay-noreply@google.com | 'Новые настройки конфиденциальности в Google Play'
+[2026-07-16 22:12:42] [RECORDER] NE-matchnutyy otvet (net v BDb / ne Reply): support@webpay.by | 'WEBPAY support message [#546232] re: a 5-point check for
+ restoransvoi.by'
+[2026-07-16 22:12:42] [RECORDER] NE-matchnutyy otvet (net v BDb / ne Reply): chayeved@yandex.by | 'Re: ваш chayeved.by'
+[2026-07-16 22:12:56] [RECORDER] NE-matchnutyy otvet (net v BDb / ne Reply): mar-1002@mail.ru | 'Re: ваш studiya-remonta.by'
+[2026-07-16 22:13:29] [RECORDER] NE-matchnutyy otvet (net v BDb / ne Reply): support@webpay.by | 'WEBPAY support message [#546231] re: a 5-point check for sabroso.by'
+[2026-07-16 22:13:58] [RECORDER] NE-matchnutyy otvet (net v BDb / ne Reply): customers@vean-tattoo.lv | 'Re: Нашёл баг на vean-tattoo.com - показать и помочь починить?'
+[2026-07-16 22:14:45] [RECORDER] DOPOLNEN otvet po #6 (bylo koroche).
+[2026-07-16 22:14:45] [RECORDER] NE-matchnutyy otvet (net v BDb / ne Reply): support@webpay.by | 'WEBPAY support message [#546099] Тестирование сайта www.sabroso.by'
+[2026-07-16 22:14:45] [RECORDER] NE-matchnutyy otvet (net v BDb / ne Reply): support@webpay.by | 'WEBPAY support message [#546100] Тестирование сайта www.sabroso.by'
+[2026-07-16 22:14:45] [RECORDER] NE-matchnutyy otvet (net v BDb / ne Reply): chudorukami@mail.ru | 'Re: re: ваш chudorukami.ru'
+[2026-07-16 22:14:45] [RECORDER] IMAP: otmecheno replied: [5, 6]
+[2026-07-16 22:14:45] [RECORDER] IMAP: propuscheno (ne-matchnuto) vhodyaschih: 11 (sm. vyse, vozmozhno novye pisma ne po Reply).
