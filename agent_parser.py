@@ -16,6 +16,14 @@ import sys
 import gordon_common as gc
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+if HERE not in sys.path:
+    sys.path.insert(0, HERE)
+
+try:
+    import dedup as dedup_mod
+except ImportError:
+    dedup_mod = None
+
 SOURCES = os.path.join(HERE, "gordon_sources.txt")
 TRACK = os.path.join(HERE, "track.py")
 
@@ -36,14 +44,26 @@ def fetch_url(url):
 
 
 def parse_and_add(url):
+    """Парсит URL и добавляет контакты в БД.
+    Возвращает: 'added' (добавлен новый), 'exists' (уже в БД),
+    'skip' (недоступно / нет контактов)."""
     html = fetch_url(url)
     if not html:
         gc.log(f"Pusto / nedostupno: {url}", "PARSER")
-        return
+        return "skip"
     emails, tgs = gc.extract_contacts(html)
     if not emails:
         gc.log(f"Kontaktov net: {url}", "PARSER")
-        return
+        return "skip"
+    # --- ДЕДУП (задача scout-2026-07-14-14): НЕ слать тому, кто уже
+    # sent/bounced/rejected. READ-ONLY проверка; статусы не меняем. ---
+    if dedup_mod is not None:
+        for e in emails:
+            dup, why = dedup_mod.is_already_contacted(url, e, " ".join(tgs) if tgs else None)
+            if dup:
+                gc.log(f"DEDUP: uzhe kontaktirovan {url} ({e}) -> {why}", "PARSER")
+                return "skip"
+    added = False
     for email in emails:
         tg = " ".join(tgs) if tgs else None
         cmd = [sys.executable, TRACK, "add", url,
@@ -55,8 +75,13 @@ def parse_and_add(url):
             out = res.stdout.decode("utf-8", errors="ignore") if res.stdout else ""
             for line in out.splitlines():
                 gc.log(line, "PARSER")
+            if "[!] Site already exists" in out:
+                return "exists"
+            if "[+] Added site" in out:
+                added = True
         except Exception as e:
             gc.log(f"add fail {url}: {e}", "PARSER")
+    return "added" if added else "skip"
 
 
 def main():
@@ -65,10 +90,25 @@ def main():
         return
     with open(SOURCES, "r", encoding="utf-8") as f:
         urls = [l.strip() for l in f if l.strip() and not l.startswith("#")]
+    if not urls:
+        gc.log("Spisok istochnikov pust (gordon_sources.txt). Dobav URL cherez "
+               "meniu «Dobavit URL v istochniki».", "PARSER")
+        return
     gc.log(f"Start parser. Url v spiske: {len(urls)}", "PARSER")
+    added = skipped = exists = 0
     for url in urls:
-        parse_and_add(url)
-    gc.log("Parser zavershen.", "PARSER")
+        res = parse_and_add(url)
+        if res == "added":
+            added += 1
+        elif res == "exists":
+            exists += 1
+        else:
+            skipped += 1
+    gc.log(f"Parser zavershen. Novyh dobavleno: {added}. Uzhe v BD: {exists}. "
+           f"Propushcheno (net kontaktov): {skipped}.", "PARSER")
+    if added == 0 and exists:
+        gc.log("Vse istochniki uzhe v baze — parsit nechego. Dobav novye URL "
+               "cherez meniu «Dobavit URL v istochniki».", "PARSER")
 
 
 if __name__ == "__main__":

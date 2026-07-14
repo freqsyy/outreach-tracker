@@ -1,0 +1,17 @@
+# Nurture v2 touch1 (+3) - LC / LAUNCH READINESS (short question)
+Subject: re: что остановило на {site}?
+
+Hi {site} team,
+
+You opened my last note - I noticed, and that's enough to tell me the timing
+isn't dead. No pitch here.
+
+Genuine question: what stopped you? Too soon, not a fit, or just buried in
+other fires? One word back is fine - it helps me know if I'm useful or noise.
+
+If it's the second, I can still run the free 3-bug audit of {site} in 24h,
+you keep the report.
+
+CTA: reply with one word, or ping {tg}. Door open either way.
+
+- a QA worker

@@ -74,9 +74,12 @@ def main():
         gc.log("Net pending-saytov. Otpravka ne trebuetsya.", "SEND_NOW")
         return
 
-    # случайный разброс — чтобы не пачкой (защита от спам-вида), но компактно
-    min_gap = max(15, int(env.get("MIN_GAP_SEC", "20")))
-    max_gap = 40  # укладываемся ~10 мин на 25 писем
+    # растягиваем отправку равномерно на ~BURST_SPAN_SEC (по умолчанию ~50 мин),
+    # чтобы 10 писем с каждого аккаунта ушли НЕ пачкой (защита от спам-вида).
+    target_span = int(env.get("BURST_SPAN_SEC", "3000"))
+    base_gap = target_span / max(1, total)
+    min_gap = max(15, min(int(env.get("MIN_GAP_SEC", "20")), base_gap))
+    max_gap = min(int(env.get("MAX_GAP_SEC", "900")), max(min_gap + 5, base_gap * 1.5))
     acc_sleep = int(settings["SLEEP_BETWEEN_ACCOUNTS_SEC"])
 
     sent = 0
@@ -102,7 +105,7 @@ def main():
         acc = accounts[acc_i % len(accounts)]
         gc.log(f"Otpravka #{row['id']} -> {row['email']} cherez {acc[0]}", "SEND_NOW")
         try:
-            s.send_one(acc, row["email"], settings, subject, body, row["url"], row["notes"] or "")
+            s.send_one(acc, row["email"], settings, subject, body, row["url"])
             s.mark_sent(row["id"])
             sent += 1
             acc_i = (acc_i + 1) % len(accounts)

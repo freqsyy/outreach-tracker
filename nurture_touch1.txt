@@ -1,0 +1,16 @@
+# Nurture Touch 1 — day 0 — angle: FREE AUDIT (HA)
+# Hook feeds the opening one-liner; if nurture_hooks.json has touch1, it wins.
+# Engine injects: {site} (domain), {tg} (telegram), {bug1} (real bug from audits/<domain>.md)
+# If no audit bug exists, engine falls back to {bug1}="a couple of layout/flow slips I'd want fixed before customers hit them".
+Subject: re: ваш {site}
+
+{hook}
+Привет! Писал вам неделю назад про QA-прогон {site} — письмо, скорее всего, утонуло в почте, поэтому дублирую коротко.
+
+Пока смотрел сайт, зацепился за один момент: {bug1}. Обычно именно такие штуки тихо отпугивают первых посетителей ещё до того, как они что-то купят.
+
+Могу пройтись по {site} целиком и прислать отчёт с багами + как починить — без оплаты на старте, просто показать, что нашёл.
+
+Мой Telegram: {tg} — там быстрее отвечаю.
+
+Назар

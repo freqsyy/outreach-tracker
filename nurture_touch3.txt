@@ -1,0 +1,15 @@
+# Nurture Touch 3 — day 7 — angle: LAUNCH READINESS / honest break-up (LC)
+# Hook feeds the launch-readiness one-liner. Engine injects {site}, {tg}.
+# This is the "leave the door open" email. No guilt, no nag.
+Subject: финальный заход по {site}
+
+{hook}
+Последнее письмо — не хочу надоедать.
+
+Если сейчас не время (запуск, фичи, просто неприоритетно) — полностью понятно, дверь открыта. Напишите «потом», и вернусь через месяц, когда будет удобнее.
+
+Если же {site} для вас сейчас важен — я могу за пару дней сделать бесплатный прогон и показать находки на живом примере вашего проекта. Решение за вами, давить не буду.
+
+{ tg }
+
+Назар

@@ -1,0 +1,330 @@
+# NURTURE library — готовые тексты всех 7 сценариев (DRAFT)
+# Формат: движок agent_nurture.py берёт каждый блок "Subject:" + тело.
+# Плейсхолдеры: {site} {tg} {bug} {answer} {checklist_link}
+# {bug} = реальный баг из audits/<domain>.md (либо честный fallback).
+# {answer} = текст вопроса лида из notes (CLIENT::replied::), только v3.
+# БЕЗ отправки. Только превью/загрузка. Тире только "-".
+
+# ============================================================
+# СЦЕНАРИЙ 1 — cold-no-reply (v1)  [cadence 0/3/7, угол HA→LR→LC]
+# ============================================================
+
+# ---------- v1 touch1 (day 0) - HA / FREE AUDIT ----------
+Subject: re: a free look at {site}
+
+Hi {site} team,
+
+Saw you shipped recently - congrats. Before more users hit it, I'd love to
+click through the real flows (signup, checkout, the stuff that actually breaks)
+the way a human does, not a bot.
+
+Quick example of what I mean: {bug}. That kind of thing silently bleeds first
+impressions, and most founders have gone blind to it.
+
+I'll find 3 bugs on {site} for free, by hand, in 24h. You keep the report, no
+strings attached.
+
+CTA: reply "AUDIT" + your URL, or ping me on {tg}.
+
+- a QA worker
+
+# ---------- v1 touch2 (day 3) - LR / LOST REVENUE ----------
+Subject: re: what {site} might be leaking
+
+Hi {site} team,
+
+Following up with the money angle. {bug} isn't just cosmetic - a broken field
+or dead button at the signup step can bury your whole funnel without ever
+showing up in analytics.
+
+I traced one indie store losing ~12% of signups to a single mislabeled input.
+Yours might have something similar, or worse.
+
+Free 3-bug audit of {site}, human-tested in 24h. The leak map is yours either
+way, whether we work together or not.
+
+CTA: send your URL, get the leak map. Or find me on {tg}.
+
+- a QA worker
+
+# ---------- v1 touch3 (day 7) - LC / LAUNCH READINESS (break-up) ----------
+Subject: re: last note on {site}
+
+Hi {site} team,
+
+Last one from me - no hard feelings if the timing's off.
+
+If you're shipping updates or prepping a launch, this is exactly when bugs hide.
+{bug} is the kind of thing users hit on day one and never bother telling you.
+
+I'll still do the free 3-bug audit of {site} before your next big push - zero
+cost, 24h, you keep the report.
+
+CTA: reply READY + URL, or reach me on {tg}. Door stays open.
+
+- a QA worker
+
+# ============================================================
+# СЦЕНАРИЙ 2 — opened-no-reply (v2)  [cadence +3/+7/+14, VALUE→LR→BREAKUP]
+# ============================================================
+
+# ---------- v2 touch1 (+3) - LC question "что остановило?" ----------
+Subject: re: what stopped you on {site}?
+
+Hi {site} team,
+
+You opened my last note - I noticed, and that's enough to tell me the timing
+isn't dead. No pitch here.
+
+Genuine question: what stopped you? Too soon, not a fit, or just buried in
+other fires? One word back is fine - it helps me know if I'm useful or noise.
+
+If it's the second, I can still run the free 3-bug audit of {site} in 24h,
+you keep the report.
+
+CTA: reply with one word, or ping {tg}. Door open either way.
+
+- a QA worker
+
+# ---------- v2 touch2 (+7) - LR / LOST REVENUE (proof) ----------
+Subject: re: what {site} might be leaking
+
+Hi {site} team,
+
+Following up with something concrete, not a nudge.
+
+On {site} I found {bug} - and that's not cosmetic. A broken field or dead
+button at the signup step doesn't shout, it just quietly drops people from
+your funnel. I watched one indie store lose ~12% of signups to a single
+mislabeled input. At your volume that's real money walking out.
+
+The free 3-bug audit catches it on paper, you keep the map either way.
+
+CTA: send your URL, get the leak map. Or {tg}.
+
+- a QA worker
+
+# ---------- v2 touch3 (+14) - SOFT FINAL (checklist, без давления) ----------
+Subject: re: last one, {site} - a gift
+
+Hi {site} team,
+
+Last one from me, promise. No pressure at all - if now's not the moment, fair.
+
+Since you're clearly hands-on with {site}, here's a free 10-point launch QA
+checklist I use: {checklist_link}. Run it yourself, no strings, no reply needed.
+
+If the timing ever shifts, the free 3-bug audit is one message away at {tg}.
+Wishing {site} smooth launches.
+
+- a QA worker
+
+# ============================================================
+# СЦЕНАРИЙ 3 — replied-question-no-buy (v3)  [ветки A/B/C/D]
+# Плейсхолдеры: + {answer}. Ветка выбирается по типу ответа лида.
+# ============================================================
+
+# ---------- Ветка A (timing) - когда вернуться ----------
+Subject: re: timing on {site}
+
+Hi {site} team,
+
+Totally fair - timing's real, not an objection. I'm not going anywhere.
+
+When would actually be convenient to pick this back up? Next month, after a
+launch, Q4? You name it - I'll ping you then, zero pressure, no calendar guilt.
+
+Meanwhile the free 3-bug audit of {site} can run in the background now and sit
+ready whenever you are.
+
+CTA: reply with a timeframe, or {tg}. I'll set the reminder.
+
+- a QA worker
+
+# ---------- Ветка B (portfolio) - один реальный кейс ----------
+Subject: re: a case for {site}
+
+Hi {site} team,
+
+Makes sense you'd want proof, not promises. Here's one that hits close to home.
+
+On {site} I found {bug}. Almost the same shape as {case}: one indie store lost
+~12% of signups to a single mislabeled input - quiet, daily, invisible in analytics.
+The audit caught it, they fixed it, recovered the signups.
+
+That's the whole portfolio in one story: real bug, real money, fixed.
+
+CTA: want the full audit of {site}? reply "AUDIT" or {tg}.
+
+- a QA worker
+
+# ---------- Ветка C (undecided) - 5 точек самопроверки ----------
+Subject: re: a 5-point check for {site}
+
+Hi {site} team,
+
+No rush on the decision - here's something useful either way. Five spots where
+{site} most often leaks users, check them yourself:
+
+1. Signup field that accepts input but never validates it
+2. Checkout button that works on desktop, dead on mobile
+3. Form that "succeeds" but sends no confirmation
+4. Error message that blames the user for a server bug
+5. A flow you've never clicked end-to-end as a stranger
+
+If even one bites, the free 3-bug audit maps the rest. No buy needed.
+
+CTA: reply which one you found, or {tg}.
+
+- a QA worker
+
+# ---------- Ветка D (has_qa) - прямой ответ + 1 CTA ----------
+Subject: re: your QA team on {site}
+
+Hi {site} team,
+
+Good - having QA is a real advantage, not a reason to say no. {answer}
+
+I'm not here to replace your team. I'm the second pair of eyes from outside:
+fresh view catches what internal folks skip (especially real devices + edge
+cases). One indie store found 3 bugs their in-house QA had walked past for months.
+
+The free 3-bug audit of {site} shows the difference on facts - your call after.
+
+CTA: reply "AUDIT" or ping {tg}. No pitch beyond this.
+
+- a QA worker
+
+# ============================================================
+# СЦЕНАРИЙ 4 — re-activate 30d (react)  [cadence 0/+7/+18, FRESH-LOOK→LR→BREAKUP]
+# ============================================================
+
+# ---------- react touch1 (day 0) - FRESH-LOOK ----------
+Subject: re: circling back on {site}
+
+Hi {site} team,
+
+It's been about a month since we last crossed paths - no hard feelings, just
+circling back with something fresh.
+
+I clicked through {site} again and {bug} is still sitting there. A month of
+quiet signup loss adds up more than people expect.
+
+Free 3-bug audit, human-tested, 24h, you keep it. The timing might be better now.
+
+CTA: reply AUDIT + URL, or {tg}.
+
+- a QA worker
+
+# ---------- react touch2 (+7) - LR / LOST REVENUE ----------
+Subject: re: a month of {site} leaking
+
+Hi {site} team,
+
+A month of {bug}-type issues is roughly a month of users leaving before they
+convert - and you'd never see it in analytics, just a slightly-too-low number.
+
+The free audit catches what your dashboard hides. One indie store I watched
+recovered ~12% of signups after a single fix.
+
+CTA: send URL, get the leak map. Or {tg}.
+
+- a QA worker
+
+# ---------- react touch3 (+18) - BREAKUP, door open ----------
+Subject: re: last reach on {site}
+
+Hi {site} team,
+
+Last reach from me for a while - I don't want to become the guy in your spam folder.
+
+If QA ever climbs the list, the free 3-bug audit of {site} is one message away
+at {tg}, no expiry, no pressure.
+
+{bug} will keep costing quietly either way - your call.
+
+- a QA worker
+
+# ============================================================
+# СЦЕНАРИЙ 5 — soft-bounce (bounce)  [cadence 0/+5/+12, CHANNEL-SWITCH→VALUE→BREAKUP]
+# ============================================================
+
+# ---------- bounce touch1 (day 0) - CHANNEL-SWITCH ----------
+Subject: re: my email to {site} bounced
+
+Hi {site} team,
+
+My last email to you bounced - looks like the address I had isn't catching mail.
+No spam, no second try to that inbox.
+
+If you're still around and curious about a free 3-bug audit of {site}, the
+easiest path is Telegram - ping me at {tg} and I'll send the report there.
+
+No pressure if the moment passed.
+
+- a QA worker
+
+# ---------- bounce touch2 (+5) - VALUE на другом канале ----------
+Subject: re: one more try, {site}
+
+Hi {site} team,
+
+Following up once on the other channel. The bounced email just means I couldn't
+reach you there - your {site} is still on my list for a free look.
+
+Quick example of the kind of thing I catch: {bug}. Costs you nothing, takes
+me 24h, you keep the findings.
+
+If Telegram's easier, I'm at {tg}. Otherwise disregard and I'll close it out.
+
+- a QA worker
+
+# ---------- bounce touch3 (+12) - канал мёртв, close ----------
+Subject: re: closing it out, {site}
+
+Hi {site} team,
+
+Closing this one out - the email's dead and I haven't heard back on Telegram, so
+I'll assume the timing's wrong rather than queue you again.
+
+The free 3-bug audit offer for {site} stands whenever you resurface. Ping {tg}
+and it's done, no expiry.
+
+- a QA worker
+
+# ============================================================
+# СЦЕНАРИЙ 6 — rejected soft-reentry (rej)  [НОВЫЙ, +90 дней, 1 тач]
+# ============================================================
+
+# ---------- rej touch1 (+90) - SOFT-REENTRY ----------
+Subject: re: {site} - всё ещё на столе
+
+Hi {site} team,
+
+Прошло почти 3 месяца с нашего last touch - не спамлю, просто заметил, что {site}
+живёт и меняется, а значит и баги там новые.
+
+Если что: бесплатный 3-баг-аудит всё ещё на столе, 24ч, отчёт остаётся у вас.
+Пока смотрел раньше, зацепился за {bug} - скорее всего, там теперь и ещё что-то.
+
+Если момент всё ещё не тот - спокойно, просто скажите, и я пропаду.
+
+- a QA worker
+
+# ============================================================
+# СЦЕНАРИЙ 7 — hired onboarding handoff (handoff)  [НОВЫЙ, +0, 1 тач]
+# ============================================================
+
+# ---------- handoff touch1 (+0) - HANDOFF в Relay/Atlas ----------
+Subject: re: {site} - передаю в онбординг
+
+Hi {site} team,
+
+Отлично, что пошли дальше - это была самая приятная часть моей работы.
+
+Передаю вас в онбординг (Relay координирует постановку в работу, Atlas ведёт
+контракт/аккаунт). Там всё будет по фактам: что нашли, что чиним, в каком темпе.
+
+По любым вопросам в процессе - я на связи в {tg}, дверь открыта.
+
+- a QA worker

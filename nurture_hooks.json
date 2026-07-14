@@ -1,0 +1,19 @@
+{
+  "_comment": "Hook-supplied lines for Nurture sequences. Each hook overrides the default touch opening ONE-LINER. Stable IDs (HA/LR/LC + NN) are forever - Sage tracks reply-rate on them, never reuse a dead ID. Fill a field to override, leave null to use nurture_touchN.txt default. RU-audience set.",
+  "touch1": {
+    "HA-01_ru": "На {site} я нашёл 3 бага, которые вы не видите. Покажу бесплатно за 24ч.",
+    "HA-03_ru": "Сломаю ваш сайт раньше, чем клиенты. Бесплатно.",
+    "default": null
+  },
+  "touch2": {
+    "LR-01_ru": "Каждая сломанная форма на {site} забирает заказ, который вы не увидите.",
+    "LR-03_ru": "Баг толко что увёл у вас клиента. Какого - не узнаете.",
+    "default": null
+  },
+  "touch3": {
+    "LC-01_ru": "Запускаетесь? Не отгружайте конфуз.",
+    "LC-04_ru": "Демо-день - не время находить баг. Я найду его первым.",
+    "default": null
+  },
+  "sage_track": ["HA-01_ru", "HA-03_ru", "LR-01_ru", "LR-03_ru", "LC-01_ru", "LC-04_ru"]
+}

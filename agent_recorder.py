@@ -515,6 +515,43 @@ def _existing_reply_fingerprints(sid):
     return out
 
 
+def _extend_reply_if_truncated(site_id, subject, body):
+    """Дописывает/заменяет обрезанный REPLY:: полным текстом, если новый длиннее.
+    Дублей не создаёт. Возвращает True если заменён/дописан.
+    Используется fetch_missing_replies.py для точечной дозаливки полных ответов."""
+    try:
+        conn = gc.get_conn()
+        row = conn.execute("SELECT notes FROM sites WHERE id=?", (site_id,)).fetchone()
+        notes = row["notes"] if row and row["notes"] else ""
+        subj_d = _safe_text(subject).strip()
+        body_clean = " ".join((body or "").split())
+        if not subj_d or not body_clean:
+            conn.close()
+            return False
+        lines = notes.splitlines()
+        replaced = False
+        for i, ln in enumerate(lines):
+            s = ln.strip()
+            if not s.startswith("REPLY::"):
+                continue
+            parts = s[len("REPLY::"):].split(" | ", 2)
+            if len(parts) < 3:
+                continue
+            if parts[0].strip() == subj_d and len(body_clean) > len(parts[2].strip()):
+                lines[i] = f"REPLY:: {parts[0]} | {parts[1]} | {body_clean}"
+                replaced = True
+                break
+        if replaced:
+            conn.execute("UPDATE sites SET notes=? WHERE id=?",
+                         ("\n".join(lines), site_id))
+            conn.commit()
+        conn.close()
+        return replaced
+    except Exception as e:
+        gc.log(f"extend_reply oshibka (#{site_id}): {e}", "RECORDER")
+        return False
+
+
 def _store_unmatched(unmatched, dry_run):
     """Сохраняет не-matчнутые входящие в inbound_unmatched (дедуп).
     Возвращает число реально добавленных строк."""

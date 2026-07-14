@@ -1,0 +1,14 @@
+# Nurture v2 touch3 (+14) - SOFT FINAL (checklist, no pressure)
+Subject: re: last one, {site} - a gift
+
+Hi {site} team,
+
+Last one from me, promise. No pressure at all - if now's not the moment, fair.
+
+Since you're clearly hands-on with {site}, here's a free 10-point launch QA
+checklist I use: {checklist_link}. Run it yourself, no strings, no reply needed.
+
+If the timing ever shifts, the free 3-bug audit is one message away at {tg}.
+Wishing {site} smooth launches.
+
+- a QA worker

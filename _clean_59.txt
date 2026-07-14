@@ -1,0 +1,16 @@
+=== ID 59 ===
+REAL REPLY:
+Клиент (tokiny.by) ответил из рассылки, просит QA-отчёт по сайту. Полный аудит готов (audits/tokiny.by.md).
+PITCH::DRAFT intent=positive objection=unknown
+
+ALL AUDIT:: LINES:
+AUDIT::critical::форма (скрытое поле)::Скрытое обязательное поле <input#telinputreg type=tel> с атрибутом required='true', но невидимо пользователю. Сообщение браузера: «Заполните это поле.». Форма не отправляется, а ошибка юзеру не показы::3
+AUDIT::critical::форма (скрытое поле)::Скрытое обязательное поле <input#telinputreg type=tel> с атрибутом required='true', но невидимо пользователю. Сообщение браузера: «Заполните это поле.». Форма не отправляется, а ошибка юзеру не показы::3
+
+FULL NOTES:
+Asian cuisine delivery TokiNY
+AUDIT::critical::форма (скрытое поле)::Скрытое обязательное поле <input#telinputreg type=tel> с атрибутом required='true', но невидимо пользователю. Сообщение браузера: «Заполните это поле.». Форма не отправляется, а ошибка юзеру не показы::3
+AUDIT::critical::форма (скрытое поле)::Скрытое обязательное поле <input#telinputreg type=tel> с атрибутом required='true', но невидимо пользователю. Сообщение браузера: «Заполните это поле.». Форма не отправляется, а ошибка юзеру не показы::3
+
+CLIENT::replied:: 2026-07-13 14:05:48 :: Клиент (tokiny.by) ответил из рассылки, просит QA-отчёт по сайту. Полный аудит готов (audits/tokiny.by.md).
+PITCH::DRAFT intent=positive objection=unknown

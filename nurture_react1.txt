@@ -1,0 +1,15 @@
+# Nurture react touch1 (day 0) - REACTIVATE / FRESH-LOOK (no pressure)
+Subject: re: still on the table for {site}?
+
+Hi {site} team,
+
+It's been about a month - just checking in, no pressure at all.
+
+I clicked through {site} a while back and {bug} is still the one that stuck with
+me: small on the surface, but exactly the thing that quietly costs first-time
+signups. Worth a free 24h re-look whenever the timing's right.
+
+If now's not the moment, totally fair - just say the word and I'll leave you be,
+or ping {tg} when you're ready. The offer doesn't expire.
+
+- a QA worker
