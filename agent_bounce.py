@@ -28,6 +28,7 @@ import email as email_lib
 import socket
 import subprocess
 import sys
+import urllib.parse
 from datetime import datetime, timedelta
 from email.utils import parseaddr, getaddresses
 
@@ -68,20 +69,56 @@ def build_recipient_map():
     conn.close()
     m = {}
     for r in rows:
-        key = (r["email"] or "").strip().lower()
+        key = _norm_addr(r["email"]) or (r["email"] or "").strip().lower()
         if key:
             m.setdefault(key, []).append(r["id"])
     return m
 
 
+# расширения файлов, которые EMAIL_RE ловит из srcset/картинок как "домен"
+# (image@2x.png, 3266.255@2x.webp, 005_22@0.75x-1-500x350.png и т.п.)
+_FILE_EXT_RE = re.compile(
+    r"\.(png|jpe?g|gif|webp|svg|bmp|ico|css|js|woff2?|ttf|eot|mp4|webm|pdf)$", re.I)
+
+
+def _norm_addr(raw):
+    """Нормализует адрес из баунса: %-декод (%20 -> пробел), срез пробелов/кавычек/
+    угловых скобок, lower. Отсекает мусор из картинок (foo@2x.png) и битые строки.
+    Возвращает чистый email или None."""
+    if not raw:
+        return None
+    a = raw.strip().strip('<>"\' \t')
+    # %20 и прочие percent-encoded пробелы/символы
+    if "%" in a:
+        try:
+            a = urllib.parse.unquote(a)
+        except Exception:
+            pass
+    a = a.strip().strip('<>"\' \t').lower()
+    if "@" not in a or a.count("@") != 1:
+        return None
+    local, _, dom = a.partition("@")
+    if not local or not dom:
+        return None
+    # домен-это-файл (картинка из srcset) -> не email
+    if _FILE_EXT_RE.search(dom):
+        return None
+    # у настоящего домена есть точка и валидный TLD (2+ букв)
+    if not re.search(r"\.[a-z]{2,}$", dom):
+        return None
+    return a
+
+
 def _collect_addrs_from_message(msg):
-    """Все email-адреса, упомянутые в заголовках/теле баунса."""
+    """Все email-адреса, упомянутые в заголовках/теле баунса (нормализованные)."""
     addrs = set()
     # 1) явные Final-Recipient / Original-Recipient
     for hdr in ("Final-Recipient", "Original-Recipient", "Original-Recipient", "X-Failed-Recipients"):
         val = msg.get(hdr, "")
         for m in RECIPIENT_RE.findall(val) + ORIG_TO_RE.findall(val):
-            addrs.add(m.lower())
+            na = _norm_addr(m)
+            if na:
+                addrs.add(na)
     # 2) адреса в теле письма (ищем все email-подобные)
     try:
         payload = ""
@@ -98,13 +135,16 @@ def _collect_addrs_from_message(msg):
             except Exception:
                 payload = ""
         for a in gc.EMAIL_RE.findall(payload):
-            addrs.add(a.lower())
+            na = _norm_addr(a)
+            if na:
+                addrs.add(na)
     except Exception:
         pass
     # 3) адреса в To/Cc (иногда баунс дублирует получателя)
     for name, addr in getaddresses(msg.get_all("To", []) + msg.get_all("Cc", [])):
-        if "@" in addr:
-            addrs.add(addr.strip().lower())
+        na = _norm_addr(addr)
+        if na:
+            addrs.add(na)
     return addrs
 
 
