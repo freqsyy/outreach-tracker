@@ -165,3 +165,51 @@ def load_letter():
     except Exception as e:
         log(f"Ne udalos prochitat letter.txt: {e}", "COMMON")
     return subject, body
+
+
+# --- Извлечение бага из notes для персонализации письма (v0.4 core-funnel) ---
+# Формат строки аудита в notes: AUDIT::<severity>::<type>::<description>[::N]
+# Пишется agent_auditor.py через audit_engine.bug_to_note().
+_SEVERITY_RANK = {"critical": 3, "high": 3, "medium": 2, "low": 1, "info": 0}
+
+
+def extract_audit_bug(notes):
+    """Извлекает самый серьёзный баг из notes сайта и форматирует его для письма.
+
+    Возвращает короткую человекочитаемую строку (без служебных маркеров/severity)
+    или пустую строку "", если багов нет. Никогда не бросает исключение.
+
+    Приоритет: critical/high > medium > low > info. При равенстве — первый по порядку.
+    """
+    if not notes:
+        return ""
+    best = None
+    best_rank = -1
+    for raw in str(notes).splitlines():
+        line = raw.strip()
+        if not line.startswith("AUDIT::"):
+            continue
+        parts = line.split("::")
+        # parts[0]='AUDIT', [1]=severity, [2]=type, [3]=description, [4]=опц. счётчик
+        if len(parts) < 4:
+            continue
+        severity = (parts[1] or "").strip().lower()
+        btype = (parts[2] or "").strip()
+        desc = (parts[3] or "").strip()
+        if not desc:
+            continue
+        rank = _SEVERITY_RANK.get(severity, 0)
+        if rank > best_rank:
+            best_rank = rank
+            # Тип полезен как контекст ("Форма", "Console"), но не обязателен.
+            if btype and btype.lower() not in desc.lower():
+                best = f"{btype}: {desc}"
+            else:
+                best = desc
+    if not best:
+        return ""
+    # Обрезаем слишком длинные описания — письмо должно быть коротким.
+    best = " ".join(best.split())  # схлопываем переводы строк/пробелы
+    if len(best) > 220:
+        best = best[:217].rstrip() + "..."
+    return best

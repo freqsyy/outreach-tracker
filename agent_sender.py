@@ -126,7 +126,7 @@ def get_pending():
     return rows
 
 
-def send_one(account, to_email, settings, subject, body, site_url=""):
+def send_one(account, to_email, settings, subject, body, site_url="", notes=""):
     # подставляем домен сайта вместо {site} — убирает "массовость"
     domain = ""
     try:
@@ -136,6 +136,16 @@ def send_one(account, to_email, settings, subject, body, site_url=""):
         domain = site_url
     subj = subject.replace("{site}", domain)
     bod = body.replace("{site}", domain)
+    # v0.4 core-funnel: персонализация реальным багом из notes (AUDIT::).
+    # Если в letter.txt нет {bug} — replace не сработает (безопасно).
+    # Если бага нет (notes пуст) — подставляем "", чтобы {bug} исчез из письма.
+    bug = gc.extract_audit_bug(notes)
+    # Если бага нет (нет AUDIT:: в notes) — подставляем нейтральную общую фразу,
+    # чтобы блок в письме не висел пустым. Не вырезаем блок целиком (простой replace).
+    if not bug:
+        bug = "пара мелких недочётов в вёрстке и формах, которые проще показать на живом примере"
+    subj = subj.replace("{bug}", bug)
+    bod = bod.replace("{bug}", bug)
     msg = MIMEText(bod, _charset="utf-8")
     msg["Subject"] = subj
     msg["From"] = f"{settings['FROM_NAME']} <{account[0]}>"
@@ -213,7 +223,7 @@ def main():
         acc = accounts[state["account_idx"] % len(accounts)]
         gc.log(f"Otpravka #{row['id']} -> {row['email']} cherez {acc[0]}", "SENDER")
         try:
-            send_one(acc, row["email"], settings, subject, body, row["url"])
+            send_one(acc, row["email"], settings, subject, body, row["url"], row.get("notes", ""))
             mark_sent(row["id"])
             state["sent_today"] += 1
             sent_this_run += 1

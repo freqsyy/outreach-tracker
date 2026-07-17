@@ -58,6 +58,10 @@ TRACK = os.path.join(HERE, "track.py")
 GORDON = os.path.join(HERE, "gordon.py")
 SEND_NOW = os.path.join(HERE, "send_now.py")
 SCOUT = os.path.join(HERE, "agent_scout.py")
+SCORER = os.path.join(HERE, "agent_scorer.py")
+LETTER_PROOF = os.path.join(HERE, "letter_proof.py")
+FUNNEL = os.path.join(HERE, "funnel_analytics.py")
+PITCHER = os.path.join(HERE, "agent_pitcher.py")
 
 # ---------------------------------------------------------------------------
 # Палитра (Неон Cyber)
@@ -799,10 +803,31 @@ class GordonDesktop(QMainWindow):
             "Скаут: сухой прогон (dry-run) — показывает молодые сайты-кандидаты, "
             "НИЧЕГО не пишет в БД. Безопасная разведка перед рассылкой.")
         self.btn_scout.clicked.connect(self.run_scout_dry)
+        # v0.4 core-funnel: 4 агента воронки
+        self.btn_scorer = NeonButton("🎯 Скоринг", NEON_CYAN)
+        self.btn_letter_proof = NeonButton("📝 Proof письма", "#a78bfa")
+        self.btn_funnel = NeonButton("📊 Воронка", "#22c55e")
+        self.btn_pitcher = NeonButton("🤝 Питчер", "#fb923c")
+        self.btn_scorer.setToolTip("agent_scorer: пересчёт score лидов (--write пишет в БД).")
+        self.btn_letter_proof.setToolTip("letter_proof: показывает персонализированное письмо (без отправки).")
+        self.btn_funnel.setToolTip("funnel_analytics: конверсия воронки (read-only).")
+        self.btn_pitcher.setToolTip("agent_pitcher: дожим replied до hired (dry-run по умолчанию).")
+        self.btn_scorer.clicked.connect(self.run_scorer)
+        self.btn_letter_proof.clicked.connect(self.run_letter_proof)
+        self.btn_funnel.clicked.connect(self.run_funnel)
+        self.btn_pitcher.clicked.connect(self.run_pitcher)
         ctrl.addWidget(self.btn_parse)
         ctrl.addWidget(self.btn_scout)
         ctrl.addWidget(self.btn_replies)
         ctrl.addWidget(self.btn_unmatched)
+        ctrl.addSpacing(8)
+        funnel_label = QLabel("ЯДРО ВОРОНКИ")
+        funnel_label.setStyleSheet(f"color:{MUTED}; font-weight:bold; letter-spacing:1px;")
+        ctrl.addWidget(funnel_label)
+        ctrl.addWidget(self.btn_scorer)
+        ctrl.addWidget(self.btn_letter_proof)
+        ctrl.addWidget(self.btn_funnel)
+        ctrl.addWidget(self.btn_pitcher)
         ctrl.addStretch(1)
         mid.addWidget(ctrl_frame)
 
@@ -1094,6 +1119,10 @@ class GordonDesktop(QMainWindow):
         self.btn_parse.setEnabled(True)
         self.btn_scout.setEnabled(True)
         self.btn_replies.setEnabled(True)
+        self.btn_scorer.setEnabled(True)
+        self.btn_letter_proof.setEnabled(True)
+        self.btn_funnel.setEnabled(True)
+        self.btn_pitcher.setEnabled(True)
         # перечитываем всё по горячим следам
         self.refresh_all()
 
@@ -1140,6 +1169,73 @@ class GordonDesktop(QMainWindow):
         self.btn_replies.setEnabled(False)
         self.btn_stop.setEnabled(True)
         self.append_log("[APP] 🛰 Скаут (dry-run) запущен - кандидаты появятся в ленте ↓")
+
+    # --- v0.4 core-funnel: 4 агента воронки ---
+    def _busy_guard_funnel(self, label):
+        if self.runner and self.runner.isRunning():
+            QMessageBox.information(
+                self, "Занято",
+                "Сейчас уже работает процесс.\n"
+                "Дождитесь завершения или нажмите Стоп.")
+            return True
+        self.runner = GordonRunner(SCORER if False else None, label)  # placeholder
+        return False
+
+    def run_scorer(self):
+        """agent_scorer: сухой прогон (без --write) — только печатает топ-лидов."""
+        if self._busy_guard_funnel("Скоринг (dry)"):
+            return
+        self.runner = GordonRunner(SCORER, "Скоринг lead-ов", [])
+        self.runner.log_line.connect(self.append_log)
+        self.runner.finished.connect(self.on_runner_finished)
+        self.runner.start()
+        self._lock_funnel_buttons()
+        self.append_log("[APP] 🎯 Скоринг запущен (dry-run, БД не тронута) ↓")
+
+    def run_letter_proof(self):
+        """letter_proof: показывает персонализированное письмо (без отправки)."""
+        if self._busy_guard_funnel("Proof письма"):
+            return
+        self.runner = GordonRunner(LETTER_PROOF, "Proof письма", [])
+        self.runner.log_line.connect(self.append_log)
+        self.runner.finished.connect(self.on_runner_finished)
+        self.runner.start()
+        self._lock_funnel_buttons()
+        self.append_log("[APP] 📝 Proof письма запущен (read-only, не шлёт) ↓")
+
+    def run_funnel(self):
+        """funnel_analytics: сводка по воронке (read-only)."""
+        if self._busy_guard_funnel("Воронка"):
+            return
+        self.runner = GordonRunner(FUNNEL, "Аналитика воронки", [])
+        self.runner.log_line.connect(self.append_log)
+        self.runner.finished.connect(self.on_runner_finished)
+        self.runner.start()
+        self._lock_funnel_buttons()
+        self.append_log("[APP] 📊 Воронка запущена (read-only) ↓")
+
+    def run_pitcher(self):
+        """agent_pitcher: дожим replied до hired (dry-run по умолчанию)."""
+        if self._busy_guard_funnel("Питчер"):
+            return
+        self.runner = GordonRunner(PITCHER, "Питчер (dry-run)", [])
+        self.runner.log_line.connect(self.append_log)
+        self.runner.finished.connect(self.on_runner_finished)
+        self.runner.start()
+        self._lock_funnel_buttons()
+        self.append_log("[APP] 🤝 Питчер запущен (dry-run) ↓")
+
+    def _lock_funnel_buttons(self):
+        self.btn_start.setEnabled(False)
+        self.btn_force.setEnabled(False)
+        self.btn_parse.setEnabled(False)
+        self.btn_scout.setEnabled(False)
+        self.btn_replies.setEnabled(False)
+        self.btn_scorer.setEnabled(False)
+        self.btn_letter_proof.setEnabled(False)
+        self.btn_funnel.setEnabled(False)
+        self.btn_pitcher.setEnabled(False)
+        self.btn_stop.setEnabled(True)
 
     def _sources_already_in_db(self):
         """True, если все URL из gordon_sources.txt уже есть в БД.
