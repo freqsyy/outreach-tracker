@@ -6,10 +6,30 @@ agent_recorder.py — АГЕНТ 3 (Летописец).
 1. РУЧНОЙ режим (по умолчанию): читает gordon_responses.txt,
    где каждая строка: <id> <replied|hired|rejected> [сумма BYN]
    и обновляет статус в track.py.
-2. IMAP-поллинг (опционально, ВЫКЛ по умолчанию): проверяет папку "Sent"
-   аккаунтов на ответы — помечает replied. ВКЛ только если IMAP_ENABLED=true в .env.
+2. IMAP-поллинг (ВКЛ если IMAP_ENABLED=true в .env): ищет ВСЕ ответы
+   владельцев сайтов и помечает replied.
 
-Запуск:  python agent_recorder.py
+=== КАК ЛОВИМ ОТВЕТЫ (цель: видеть ВООБЩЕ все ответы) ===
+Проблема старой версии: матч ТОЛЬКО если from_email ответа == email, КОМУ
+писали. Владелец отвечает с личного ящика (marina@gmail.com) -> терялось.
+
+Решение — четыре слоя матча, плюс сохранение всего, что не матчнулось:
+  ЭТАП 1 — строим мапу Message-ID нашего письма -> site_id из папки Sent
+           КАЖДОГО аккаунта (To: письма -> email_map -> site_id).
+  ЭТАП 2 — сканируем ВСЕ папки (Inbox/Спам/Вся почта/forwarded) каждого
+           аккаунта на входящие:
+     (а) цепочка: In-Reply-To / References содержит наш Message-ID -> site_id
+         (независимо от того, с какого ящика владелец ответил)
+     (б) мягкий домен: домен From ответа == домен сайта (или вложен)
+     (в) topic-hit: название сайта / домен без tld встречается в теме ИЛИ теле
+     (г) Delivered-To: на какой из наших акков доставлено -> ищем его Sent-цепочку
+  ЭТАП 3 — всё, что НЕ матчнулось к сайту (минус служебный мусор), сохраняем
+           в таблицу inbound_unmatched. Ничего не теряется — разберём руками
+           или дообучим матч. Дедуп по (from_email, subject, preview).
+
+Запуск:  python agent_recorder.py [--dry-run]
+  --dry-run : сканирует почту и логирует находки, НЕ пишет в БД и НЕ меняет
+              статусы. Используем для проверки перед боевым прогоном.
 """
 
 import os
@@ -20,13 +40,41 @@ import socket
 import subprocess
 import sys
 from datetime import datetime, timedelta
-from email.utils import parseaddr
+from email.utils import parseaddr, getaddresses
 
 import gordon_common as gc
+
+# Надёжное извлечение email-адресов из любого заголовка (To/From/Delivered-To/...).
+# email.utils.getaddresses ломается на адресах без угловых скобок <...> (съедает
+# первую букву: "info@x.by" -> "nfo@x.by"), поэтому дублируем regex-извлечением.
+_EMAIL_RE = re.compile(r"[\w.+-]+@[\w.-]+\.[A-Za-z]{2,}")
+
+def extract_emails(header_value):
+    """Возвращает список email-адресов (lower) из значения заголовка.
+    Использует regex поверх getaddresses: так покрываем и 'addr@x.by' (без
+    скобок), и '<addr@x.by>', и списки через запятую."""
+    if not header_value:
+        return []
+    found = set()
+    if isinstance(header_value, list):
+        header_value = ", ".join(header_value)
+    found.update(a[1].strip().lower() for _, a in getaddresses([header_value]) if a[1].strip())
+    found.update(x.lower() for x in _EMAIL_RE.findall(header_value))
+    return [e for e in found if "@" in e]
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 RESPONSES = os.path.join(HERE, "gordon_responses.txt")
 TRACK = os.path.join(HERE, "track.py")
+
+# Названия папок на разных локалях Gmail (реальные имена подтягиваются через
+# list_mailboxes(), это запасной сет).
+_SENT_CANDIDATES = ["[Gmail]/Sent Mail", "[Gmail]/Отправленные", "[Gmail]/Sent",
+                    "Sent Mail", "Sent", "Отправлено"]
+_SPAM_CANDIDATES = ["[Gmail]/Spam", "[Gmail]/Спам", "Spam", "Спам", "Junk", "Bulk Mail"]
+_ALL_CANDIDATES = ["[Gmail]/All Mail", "[Gmail]/Вся почта", "All Mail", "Вся почта"]
+
+# Статусы, которые считаем "уже писали этому сайту" (кандидаты на ответ)
+_SENT_LIKE = ("sent", "replied", "hired", "rejected", "bounced")
 
 
 def get_accounts(env):
@@ -43,72 +91,462 @@ def get_accounts(env):
     return accs
 
 
-def build_email_map():
-    """email(lower) -> [id сайтов], только те, кому уже писали (status = sent).
-    Отвеченные (replied/hired/rejected) не трогаем — idempotent."""
+def _decode_header(val):
+    """Декодирует MIME-заголовок (=?utf-8?B?...?=) в читаемую строку."""
+    if not val:
+        return ""
+    try:
+        from email.header import decode_header, make_header
+        return str(make_header(decode_header(val)))
+    except Exception:
+        return val
+
+
+def _domain_of(email_addr):
+    """Домен из email (lower). Пусто если нет @."""
+    e = (email_addr or "").strip().lower()
+    if "@" not in e:
+        return ""
+    return e.rpartition("@")[2]
+
+
+def _domain_from_url(url):
+    if not url:
+        return ""
+    m = re.match(r"https?://([^/]+)/?", url, re.I)
+    return (m.group(1) if m else url).lower().strip()
+
+
+def list_mailboxes(m):
+    """Возвращает dict: decoded_name -> {orig, flags}.
+    Параллельно тащим флаги из сырого list() (\\Sent / \\Junk / \\All),
+    чтобы выбирать папки НЕЗАВИСИМО от локали имени."""
+    result = {}
+    try:
+        typ, data = m.list()
+        if typ != "OK":
+            return result
+        for raw in data:
+            if not raw:
+                continue
+            s = raw.decode("utf-8", "ignore")
+            mm = re.findall(r'"((?:[^"\\]|\\.)*)"', s)
+            orig = mm[-1] if mm else s.split()[-1].strip()
+            if not orig:
+                continue
+            flags = set(re.findall(r"\\([A-Za-z]+)", s))
+            result[_decode_imap_utf7(orig)] = {"orig": orig, "flags": flags}
+    except Exception:
+        pass
+    return result
+
+
+def _decode_imap_utf7(name):
+    """Декодирует IMAP-UTF7 (modified base64 между & и -) в читаемую строку."""
+    if "&" not in name:
+        return name
+    try:
+        import base64
+        out = []
+        i = 0
+        while i < len(name):
+            if name[i] == "&" and (i + 1 >= len(name) or name[i + 1] != "-"):
+                j = name.find("-", i + 1)
+                if j == -1:
+                    out.append(name[i:]); break
+                chunk = name[i + 1:j]
+                if not chunk:
+                    out.append("&"); i = j + 1; continue
+                b = chunk.replace(",", "/")
+                b += "=" * ((4 - len(b) % 4) % 4)
+                out.append(base64.b64decode(b).decode("utf-16-be", "ignore"))
+                i = j + 1
+            else:
+                out.append(name[i]); i += 1
+        return "".join(out)
+    except Exception:
+        return name
+
+
+def _safe_select(m, box_original):
+    """IMAP SELECT с экранированием имени папки (ОРИГИНАЛЬНОЕ имя из list)."""
+    try:
+        typ, data = m.select('"%s"' % box_original.replace('"', '\\"'))
+        return typ == "OK"
+    except Exception:
+        return False
+
+
+def _safe_text(s):
+    """Убирает символы, которые не лезут в cp1251-консоль (эмодзи и т.п.)."""
+    if not s:
+        return ""
+    try:
+        s.encode("cp1251")
+        return s
+    except Exception:
+        return "".join(ch if ord(ch) < 0x2500 else "?" for ch in s)
+
+
+def _site_keywords(url):
+    """Ключевые слова сайта для topic-hit.
+    Возвращает set: чистый домен (без www/tld) + домен целиком.
+    Напр. https://mycoolshop.com/ -> {'mycoolshop', 'mycoolshop.com'}."""
+    dom = _domain_from_url(url)
+    if not dom:
+        return set()
+    out = {dom}
+    base = dom
+    if "." in base:
+        base = base.rsplit(".", 1)[0]
+    if base.startswith("www."):
+        base = base[4:]
+    if base:
+        out.add(base)
+    return out
+
+
+def build_site_maps():
+    """Три мапы из БД (sites, кому уже писали):
+      email_map:  email(lower)         -> [site_id]   (точный получатель)
+      domain_map: domain сайта(lower)  -> [site_id]   (запасной матч по домену)
+      name_map:   keyword(lower)       -> [site_id]   (topic-hit по названию)
+    Idempotent: отвеченные (replied/hired) не трогаем при применении, но в мапу
+    кладём всех, чтобы цепочка Sent->site работала даже для уже replied.
+    """
     conn = gc.get_conn()
     rows = conn.execute(
-        "SELECT id, email FROM sites WHERE status='sent' AND email IS NOT NULL"
+        "SELECT id, email, url FROM sites WHERE email IS NOT NULL"
     ).fetchall()
     conn.close()
-    m = {}
+    email_map = {}
+    domain_map = {}
+    name_map = {}
     for r in rows:
         key = (r["email"] or "").strip().lower()
         if key:
-            m.setdefault(key, []).append(r["id"])
-    return m
+            email_map.setdefault(key, []).append(r["id"])
+        dom = _domain_from_url(r["url"])
+        if dom:
+            domain_map.setdefault(dom, []).append(r["id"])
+            for kw in _site_keywords(r["url"]):
+                name_map.setdefault(kw, []).append(r["id"])
+    return email_map, domain_map, name_map
 
 
-def check_account_inbox(email_addr, password, email_map, lookback_days=14):
-    """Заходит в INBOX аккаунта, ищет письма от владельцев сайтов.
-    Возвращает список (site_id, subject, preview) совпадений."""
-    matched = []
+def build_sent_map(email_addr, password, email_map, min_date=None):
+    """Читает папку Sent аккаунта. Для каждого НАШЕГО письма:
+      Message-ID -> site_id (по To: -> email_map).
+    Возвращает dict: msgid(lower) -> site_id."""
+    msg_map = {}
     try:
         socket.setdefaulttimeout(30)
         m = imaplib.IMAP4_SSL("imap.gmail.com", 993)
         m.login(email_addr, password)
-        m.select("INBOX")
-        since = (datetime.now() - timedelta(days=lookback_days)).strftime("%d-%b-%Y")
+        boxes = list_mailboxes(m)
+        sent_box = None
+        for info in boxes.values():
+            if "Sent" in info["flags"]:
+                sent_box = info["orig"]
+                break
+        if sent_box is None:
+            for cand in _SENT_CANDIDATES:
+                if cand in boxes:
+                    sent_box = boxes[cand]["orig"]
+                    break
+        if sent_box is None:
+            for dec, info in boxes.items():
+                if "sent" in dec.lower() or "отправ" in dec.lower():
+                    sent_box = info["orig"]
+                    break
+        if not sent_box:
+            m.logout()
+            return msg_map
+        gc.log(f"Sent-box dlya {email_addr}: {sent_box}", "RECORDER")
+        if not _safe_select(m, sent_box):
+            m.logout()
+            return msg_map
+        since = (min_date or (datetime.now() - timedelta(days=60))).strftime("%d-%b-%Y")
         typ, data = m.search(None, "SINCE", since)
         if typ != "OK" or not data or not data[0]:
             m.logout()
-            return matched
-        for num in data[0].split():
-            typ, msg_data = m.fetch(num, "(RFC822)")
-            if typ != "OK":
+            return msg_map
+        nums = data[0].split()
+        # Батчевый fetch по диапазонам: Gmail через прокси НЕ ест список
+        # "n1 n2 n3" (BAD parse), но ест диапазоны "a:b". По одному fetch
+        # на 122+ письма/акк было бы минутами - поэтому режем на чанки.
+        batch = 50
+        for i in range(0, len(nums), batch):
+            chunk = nums[i:i + batch]
+            start = int(chunk[0]); end = int(chunk[-1])
+            typ, msg_data = m.fetch(f"{start}:{end}", "(RFC822.HEADER)")
+            if typ != "OK" or not msg_data:
                 continue
-            raw = msg_data[0][1]
-            msg = email_lib.message_from_bytes(raw)
-            from_email = parseaddr(msg.get("From", ""))[1].strip().lower()
-            if from_email in email_map:
-                subject = msg.get("Subject", "") or ""
-                preview = ""
-                if msg.is_multipart():
-                    for part in msg.walk():
-                        if part.get_content_type() == "text/plain":
-                            try:
-                                preview = part.get_payload(decode=True).decode("utf-8", "ignore")
-                            except Exception:
-                                preview = ""
-                            break
-                else:
-                    try:
-                        preview = msg.get_payload(decode=True).decode("utf-8", "ignore")
-                    except Exception:
-                        preview = ""
-                preview = " ".join(preview.split())[:200]
-                for sid in email_map[from_email]:
-                    matched.append((sid, subject, preview))
+            for item in msg_data:
+                if not isinstance(item, tuple) or not isinstance(item[1], bytes):
+                    continue
+                msg = email_lib.message_from_bytes(item[1])
+                msgid = (msg.get("Message-ID") or "").strip().lower()
+                if not msgid:
+                    continue
+                to_addrs = extract_emails(msg.get_all("To", []))
+                for to in to_addrs:
+                    if to in email_map:
+                        for sid in email_map[to]:
+                            msg_map[msgid] = sid
+                        break
         m.logout()
     except Exception as e:
-        gc.log(f"IMAP oshibka dlya {email_addr}: {e}", "RECORDER")
+        gc.log(f"Sent-scan oshibka dlya {email_addr}: {e}", "RECORDER")
+    return msg_map
+
+
+def _is_own_account(from_email, accounts):
+    return from_email in {a[0].lower() for a in accounts}
+
+
+def _is_system_junk(from_email):
+    local = from_email.partition("@")[0]
+    return local in ("noreply", "no-reply", "postmaster", "mailer-daemon", "root")
+
+
+def _html_to_text(html):
+    """Грубый, но надёжный парсер HTML-письма в чистый текст."""
+    if not html:
+        return ""
+    from html import unescape as _unescape
+    h = re.sub(r"(?i)<(br|/p|/div|/li|/tr|/h[1-6])[^>]*>", "\n", html)
+    h = re.sub(r"(?i)<[^>]+>", " ", h)
+    h = _unescape(h)
+    lines = [ln.strip() for ln in h.splitlines()]
+    text = "\n".join(ln for ln in lines if ln)
+    return " ".join(text.split())
+
+
+def _extract_preview(msg):
+    """Достаёт ЧИСТЫЙ текст ответа из письма (без лимита длины)."""
+    plain, html = "", ""
+    try:
+        if msg.is_multipart():
+            for part in msg.walk():
+                ct = part.get_content_type()
+                if ct == "text/plain" and not plain:
+                    try:
+                        plain = part.get_payload(decode=True).decode("utf-8", "ignore")
+                    except Exception:
+                        plain = ""
+                elif ct == "text/html" and not html:
+                    try:
+                        html = part.get_payload(decode=True).decode("utf-8", "ignore")
+                    except Exception:
+                        html = ""
+        else:
+            try:
+                payload = msg.get_payload(decode=True).decode("utf-8", "ignore")
+            except Exception:
+                payload = ""
+            if msg.get_content_type() == "text/html":
+                html = payload
+            else:
+                plain = payload
+    except Exception:
+        pass
+    src = plain.strip() or _html_to_text(html)
+    src = src.strip()
+    return " ".join(src.split())
+
+
+def _soft_domain_match(frm_domain, site_domain):
+    """Мягкий матч домена: точное, вложенное (поддомен/формы обратной связи),
+    или сайт вложен в домен отправителя."""
+    frm = (frm_domain or "").lower()
+    site = (site_domain or "").lower()
+    if not frm or not site:
+        return False
+    return (frm == site
+            or frm.endswith("." + site)
+            or site.endswith("." + frm))
+
+
+def _topic_hit(text, name_map):
+    """Ищет ключевое слово сайта (название/домен) в тексте ответа.
+    Возвращает site_id или None."""
+    if not text:
+        return None
+    low = text.lower()
+    for kw, sids in name_map.items():
+        if len(kw) >= 4 and kw in low:
+            return sids[0]
+    return None
+
+
+def scan_inbox_for_replies(email_addr, password, msg_map, email_map, domain_map,
+                           name_map, accounts, lookback_days=30):
+    """Сканирует ВСЕ папки аккаунта на ответы.
+    Матч (в порядке приоритета):
+      1) In-Reply-To / References содержит наш Message-ID (цепочка) -> site_id
+      2) Delivered-To -> наш акк -> его Sent-цепочка (цепочка через доставку)
+      3) мягкий домен From ответа == домен сайта -> site_id
+      4) topic-hit: название сайта в теме/теле -> site_id
+    Возвращает (matched, unmatched):
+      matched:  [(site_id, subject, preview, from_email)]
+      unmatched:[(from_email, subject, preview)]  — для сохранения в БД
+    """
+    matched = []
+    unmatched = []
+    own_addrs = {a[0].lower() for a in accounts}
+    try:
+        socket.setdefaulttimeout(30)
+        m = imaplib.IMAP4_SSL("imap.gmail.com", 993)
+        m.login(email_addr, password)
+        boxes = list_mailboxes(m)
+        # Сканируем ТОЛЬКО папки-получатели: INBOX, Спам (\Junk), Вся почта (\All).
+        # НЕ трогаем Sent/черновики/корзину - там нет входящих ответов.
+        # \All покрывает и forwarded-копии (они дублируются в "Вся почта").
+        scan = []
+        for name, info in boxes.items():
+            flags = " ".join(info.get("flags", []))
+            if "\\Sent" in flags or "Отправленные" in name:
+                continue
+            if name.upper() == "INBOX" or "\\Junk" in flags or "\\All" in flags:
+                scan.append(info["orig"])
+        scan = list(dict.fromkeys(scan)) or ["INBOX"]
+        since = (datetime.now() - timedelta(days=lookback_days)).strftime("%d-%b-%Y")
+        for box in scan:
+            try:
+                if not _safe_select(m, box):
+                    continue
+            except Exception:
+                continue
+            typ, data = m.search(None, "SINCE", since)
+            if typ != "OK" or not data or not data[0]:
+                continue
+            nums = data[0].split()
+            for i in range(0, len(nums), 50):
+                chunk = nums[i:i + 50]
+                start = int(chunk[0]); end = int(chunk[-1])
+                typ, msg_data = m.fetch(f"{start}:{end}", "(RFC822)")
+                if typ != "OK" or not msg_data:
+                    continue
+                for item in msg_data:
+                    if not isinstance(item, tuple) or not isinstance(item[1], bytes):
+                        continue
+                    msg = email_lib.message_from_bytes(item[1])
+                from_email = extract_emails(msg.get("From", ""))
+                from_email = from_email[0] if from_email else ""
+                # пропускаем собственные аккаунты (наши же письма в "Вся почта")
+                if from_email in own_addrs:
+                    continue
+                if _is_system_junk(from_email):
+                    continue
+                subject = _decode_header(msg.get("Subject", ""))
+                # --- цепочка: In-Reply-To + References ---
+                refs = []
+                irt = msg.get("In-Reply-To")
+                if irt:
+                    refs += re.findall(r"<([^>]+)>", irt)
+                refs_field = msg.get("References")
+                if refs_field:
+                    refs += re.findall(r"<([^>]+)>", refs_field)
+                refs_lower = [r.strip().lower() for r in refs]
+                sid = None
+                for r in refs_lower:
+                    if r in msg_map:
+                        sid = msg_map[r]
+                        break
+                # --- Delivered-To: на какой из наших акков доставлено ---
+                if sid is None:
+                    for dt in extract_emails(msg.get_all("Delivered-To", [])):
+                        dt = dt.strip().lower()
+                        if dt in own_addrs and dt in email_map:
+                            # ищем site_id по To: акка, на который пришло
+                            for cand in email_map.get(dt, []):
+                                sid = cand
+                                break
+                        if sid is not None:
+                            break
+                # --- мягкий домен ---
+                if sid is None:
+                    fdom = _domain_of(from_email)
+                    for sdom, sids in domain_map.items():
+                        if _soft_domain_match(fdom, sdom):
+                            sid = sids[0]
+                            break
+                # --- topic-hit по названию сайта в теме/теле ---
+                if sid is None:
+                    body = _extract_preview(msg)
+                    sid = _topic_hit(subject + " " + body, name_map)
+                if sid is None:
+                    preview = _extract_preview(msg)
+                    unmatched.append((from_email, subject, preview))
+                    continue
+                preview = _extract_preview(msg)
+                matched.append((sid, subject, preview, from_email))
+        m.logout()
+    except Exception as e:
+        gc.log(f"Inbox-scan oshibka dlya {email_addr}: {e}", "RECORDER")
         gc.record_pitfall(
             "Recorder: oshibka IMAP",
             str(e),
             "IMAP vyklyuchen v akkaunte / nevernyy app-password / blok",
             "vklyuchit IMAP v nastroykah Gmail, proverit APP_PASSWORD"
         )
-    return matched
+    return matched, unmatched
+
+
+def _existing_reply_fingerprints(sid):
+    """Отпечатки (subject, preview) уже сохранённых REPLY:: для сайта."""
+    try:
+        conn = gc.get_conn()
+        row = conn.execute("SELECT notes FROM sites WHERE id=?", (sid,)).fetchone()
+        conn.close()
+    except Exception:
+        return set()
+    if not row or not row["notes"]:
+        return set()
+    out = set()
+    for line in (row["notes"] or "").splitlines():
+        line = line.strip()
+        if not line.startswith("REPLY::"):
+            continue
+        parts = line[len("REPLY::"):].split(" | ", 2)
+        if len(parts) >= 3:
+            out.add((parts[0].strip(), parts[2].strip()))
+    return out
+
+
+def _store_unmatched(unmatched, dry_run):
+    """Сохраняет не-matчнутые входящие в inbound_unmatched (дедуп).
+    Возвращает число реально добавленных строк."""
+    if not unmatched:
+        return 0
+    added = 0
+    try:
+        conn = gc.get_conn()
+        existing = set()
+        for r in conn.execute(
+            "SELECT from_email, subject, preview FROM inbound_unmatched"
+        ).fetchall():
+            existing.add((r["from_email"], r["subject"], r["preview"]))
+        for from_email, subject, preview in unmatched:
+            fp = (from_email, subject, preview)
+            if fp in existing:
+                continue
+            if dry_run:
+                added += 1
+                continue
+            conn.execute(
+                "INSERT INTO inbound_unmatched (site_id, from_email, subject, preview, status) "
+                "VALUES (NULL, ?, ?, ?, 'new')",
+                (from_email, subject, preview),
+            )
+            added += 1
+        if not dry_run:
+            conn.commit()
+        conn.close()
+    except Exception as e:
+        gc.log(f"store_unmatched oshibka: {e}", "RECORDER")
+    return added
 
 
 def apply(id_, status, amount=None, note=None):
@@ -131,53 +569,126 @@ def apply(id_, status, amount=None, note=None):
 
 def main():
     env = gc.load_env()
+    dry_run = "--dry-run" in sys.argv
 
-    # --- РУЧНОЙ режим: gordon_responses.txt ---
+    # --- РУЧНОЙ режим: gordon_responses.txt (пропускаем в dry-run) ---
     if os.path.exists(RESPONSES):
         with open(RESPONSES, "r", encoding="utf-8") as f:
             for line in f:
                 line = line.strip()
                 if not line or line.startswith("#"):
                     continue
-                # формат: 12 hired 80  ИЛИ  12 replied
                 m = re.match(r"^(\d+)\s+(replied|hired|rejected)\s*(\d+(?:\.\d+)?)?", line)
                 if m:
                     id_ = int(m.group(1))
                     status = m.group(2)
                     amount = float(m.group(3)) if m.group(3) else None
+                    if dry_run:
+                        gc.log(f"[DRY] ruchnoy: #{id_} {status}", "RECORDER")
+                        continue
                     apply(id_, status, amount)
                 else:
                     gc.log(f"Ne raspoznal stroku: {line}", "RECORDER")
-        # очищаем обработанный файл, чтобы не дублировать
-        open(RESPONSES, "w", encoding="utf-8").close()
-        gc.log("gordon_responses.txt obrabotan i ochishen.", "RECORDER")
+        if not dry_run:
+            open(RESPONSES, "w", encoding="utf-8").close()
+            gc.log("gordon_responses.txt obrabotan i ochishen.", "RECORDER")
     else:
         gc.log("Net ruchnyh otvetov (gordon_responses.txt pust).", "RECORDER")
 
     # --- АВТО-режим: IMAP-поллинг (включается IMAP_ENABLED=true) ---
-    if env.get("IMAP_ENABLED", "false").lower() == "true":
-        gc.log("IMAP- pollling VKLYUCHEN. Proveryaem vhodyaschie otvetov...", "RECORDER")
-        accounts = get_accounts(env)
-        email_map = build_email_map()
-        if not email_map:
-            gc.log("Net otpravlennyh saitov dlya proverki otvetov.", "RECORDER")
-            return
-        found = set()
-        for email_addr, password in accounts:
-            lookback = int(env.get("IMAP_LOOKBACK_DAYS", "14"))
-            results = check_account_inbox(email_addr, password, email_map, lookback)
-            for sid, subject, preview in results:
-                if sid in found:
-                    continue  # один сайт — один replied за прогон
-                found.add(sid)
-                gc.log(f"NAYDEN otvet po #{sid}: '{subject}'", "RECORDER")
-                apply(sid, "replied", note=f"Avto-otvet: {subject} | {preview}")
-        if found:
-            gc.log(f"IMAP: otmecheno replied: {sorted(found)}", "RECORDER")
-        else:
-            gc.log("IMAP: novyh otvetov net.", "RECORDER")
-    else:
+    if env.get("IMAP_ENABLED", "false").lower() != "true":
         gc.log("IMAP vyklyuchen (IMAP_ENABLED=false). Avto-proverka propuschena.", "RECORDER")
+        return
+
+    gc.log("IMAP- pollling VKLYUCHEN. Proveryaem otvety po cepochke pisem...", "RECORDER")
+    accounts = get_accounts(env)
+    if not accounts:
+        gc.log("Net akkauntov (ACCOUNT_x) v .env. Stop.", "RECORDER")
+        return
+
+    email_map, domain_map, name_map = build_site_maps()
+    if not email_map:
+        gc.log("Net otpravlennyh saitov dlya proverki otvetov.", "RECORDER")
+        return
+
+    lookback = int(env.get("IMAP_LOOKBACK_DAYS", "14"))
+    try:
+        conn = gc.get_conn()
+        row = conn.execute(
+            "SELECT MIN(created_at) AS oldest FROM sites WHERE status IN (%s)"
+            % ",".join("?" * len(_SENT_LIKE)), _SENT_LIKE
+        ).fetchone()
+        conn.close()
+        if row and row["oldest"]:
+            oldest = datetime.strptime(row["oldest"][:10], "%Y-%m-%d")
+            age = (datetime.now() - oldest).days + 3
+            lookback = max(lookback, age)
+    except Exception:
+        pass
+
+    # ЭТАП 1: мапа Message-ID -> site_id из Sent ВСЕХ аккаунтов
+    msg_map = {}
+    for email_addr, password in accounts:
+        sm = build_sent_map(email_addr, password, email_map,
+                            min_date=datetime.now() - timedelta(days=lookback))
+        msg_map.update(sm)
+    gc.log(f"Sent-map postroena: {len(msg_map)} nashih pisem s Message-ID.", "RECORDER")
+
+    # ЭТАП 2+3: сканируем входящие, матчим, сохраняем unmatched
+    found = set()
+    seen_unmatched = set()
+    total_unmatched = 0
+    for email_addr, password in accounts:
+        matched, unmatched = scan_inbox_for_replies(
+            email_addr, password, msg_map, email_map, domain_map, name_map,
+            accounts, lookback
+        )
+        for sid, subject, preview, from_email in matched:
+            if sid in found:
+                continue
+            conn = gc.get_conn()
+            st = conn.execute("SELECT status FROM sites WHERE id=?", (sid,)).fetchone()
+            conn.close()
+            if st and st["status"] in ("hired", "rejected"):
+                found.add(sid)
+                continue
+            found.add(sid)
+            subj_d = _safe_text(subject).strip()
+            prev = preview.strip()
+            junk_markers = ("webpay support message", "payment", "transaction receipt")
+            if prev and any(mk in prev.lower() for mk in junk_markers):
+                gc.log(f"PROPUSK musora po #{sid}: '{prev[:60]}'", "RECORDER")
+                continue
+            existing = _existing_reply_fingerprints(sid)
+            if (subj_d, prev) in existing:
+                gc.log(f"DUPL otveta po #{sid} propuschen (uzhe est).", "RECORDER")
+                continue
+            gc.log(f"NAYDEN otvet po #{sid} (ot {from_email}): '{subj_d}'", "RECORDER")
+            if not dry_run:
+                apply(sid, "replied",
+                      note=f"REPLY::{subj_d} | {from_email} | {prev}")
+        for from_email, subject, preview in unmatched:
+            key = (from_email, subject, preview)
+            if key in seen_unmatched:
+                continue
+            seen_unmatched.add(key)
+            total_unmatched += 1
+            gc.log(f"NE-matchnuto (sohranim v inbound_unmatched): {from_email} | "
+                   f"'{_safe_text(subject)}'", "RECORDER")
+
+    # ЭТАП 3: сохраняем unmatched в БД (дедуп внутри _store_unmatched)
+    stored = _store_unmatched(list(seen_unmatched), dry_run)
+
+    if found:
+        gc.log(f"IMAP: otmecheno replied: {sorted(found)}", "RECORDER")
+    else:
+        gc.log("IMAP: novyh otvetov (matched) net.", "RECORDER")
+    if dry_run:
+        gc.log(f"[DRY-RUN] matched={len(found)} unmatched_vhodyaschih={total_unmatched} "
+               f"(budet dobavleno v inbound_unmatched: {stored}). ZAPIS NE PROIZVEDENA.",
+               "RECORDER")
+    else:
+        gc.log(f"IMAP: sohraneno v inbound_unmatched: {stored} novyh.", "RECORDER")
 
 
 if __name__ == "__main__":

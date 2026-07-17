@@ -116,6 +116,14 @@ def read_stats():
         earned = conn.execute(
             "SELECT COALESCE(SUM(amount_earned), 0) FROM sites WHERE status='hired'"
         ).fetchone()[0] or 0
+        unmatched = 0
+        try:
+            ur = conn.execute(
+                "SELECT COUNT(*) FROM inbound_unmatched WHERE status='new'"
+            ).fetchone()
+            unmatched = ur[0] if ur else 0
+        except sqlite3.OperationalError:
+            unmatched = 0
         conn.close()
         total = sum(by_status.values())
         sent_pool = (
@@ -135,6 +143,7 @@ def read_stats():
             "bounced": by_status.get("bounced", 0),
             "earned": earned,
             "conversion": conv,
+            "unmatched": unmatched,
         }
     except sqlite3.OperationalError:
         # БД занята Гордоном - пропускаем итерацию
@@ -720,6 +729,8 @@ class GordonDesktop(QMainWindow):
         self.cards["Earned"] = NeonCard("Заработано", STATUS_COLORS["hired"])
         dash.addWidget(self.cards["Conv"])
         dash.addWidget(self.cards["Earned"])
+        self.cards["Unmatched"] = NeonCard("Не распознано", "#fb923c")
+        dash.addWidget(self.cards["Unmatched"])
         dash.addStretch(1)
 
         dash_scroll = QScrollArea()
@@ -778,10 +789,12 @@ class GordonDesktop(QMainWindow):
         ctrl.addWidget(agents_label)
         self.btn_parse = NeonButton("🔍 Поиск сайтов", NEON_CYAN)
         self.btn_replies = NeonButton("📥 Просмотр ответов", "#22c55e")
+        self.btn_unmatched = NeonButton("📨 Не распознано", "#fb923c")
         self.btn_scout = NeonButton("🛰 Скаут (проба)", NEON_PINK)
         self.btn_parse.setToolTip("Гордон сам ищет МОЛОДЫЕ сайты (Скаут) или парсит твой список URL")
         self.btn_parse.clicked.connect(self.open_parse_menu)
         self.btn_replies.clicked.connect(self.open_replies)
+        self.btn_unmatched.clicked.connect(self.open_unmatched)
         self.btn_scout.setToolTip(
             "Скаут: сухой прогон (dry-run) — показывает молодые сайты-кандидаты, "
             "НИЧЕГО не пишет в БД. Безопасная разведка перед рассылкой.")
@@ -789,6 +802,7 @@ class GordonDesktop(QMainWindow):
         ctrl.addWidget(self.btn_parse)
         ctrl.addWidget(self.btn_scout)
         ctrl.addWidget(self.btn_replies)
+        ctrl.addWidget(self.btn_unmatched)
         ctrl.addStretch(1)
         mid.addWidget(ctrl_frame)
 
@@ -902,6 +916,13 @@ class GordonDesktop(QMainWindow):
         self.cards["Bounced"].set_value(s["bounced"])
         self.cards["Conv"].set_value(f"{s['conversion']:.1f}")
         self.cards["Earned"].set_value(f"BYN {s['earned']:.2f}")
+        if "unmatched" in s and s["unmatched"]:
+            self.cards["Unmatched"].set_value(s["unmatched"])
+            self.cards["Unmatched"].num.setStyleSheet("color:#fb923c; background:transparent;")
+        else:
+            self.cards["Unmatched"].set_value(0)
+            self.cards["Unmatched"].num.setStyleSheet(
+                f"color:{MUTED}; background:transparent;")
 
     def refresh_table(self):
         status = self.status_combo.currentText()
@@ -1361,6 +1382,191 @@ class GordonDesktop(QMainWindow):
         btns.addWidget(b_refresh)
         btns.addWidget(b_close)
         lay.addLayout(btns)
+
+        dlg.exec()
+
+    def open_unmatched(self):
+        """Диалог: входящие, которые Гордон НЕ смог матчнуть к сайту.
+        Ничего не теряется - тут можно вручную привязать к сайту (#id)."""
+        dlg = QDialog(self)
+        dlg.setWindowTitle("📨 Не распознанные ответы")
+        dlg.resize(1000, 620)
+        dlg.setStyleSheet(f"background:{BG}; color:{TEXT};")
+        lay = QVBoxLayout(dlg)
+        lay.setContentsMargins(14, 14, 14, 14)
+        lay.setSpacing(10)
+
+        head = QLabel("Входящие, которые не матчнулись к сайту. "
+                      "Выбери запись -> введи #id сайта -> «Привязать».")
+        head.setWordWrap(True)
+        head.setStyleSheet(f"color:{MUTED}; font-size:10px;")
+        lay.addWidget(head)
+
+        split = QSplitter(Qt.Horizontal)
+        lay.addWidget(split, 1)
+
+        left = QWidget()
+        left_lay = QVBoxLayout(left)
+        left_lay.setContentsMargins(0, 0, 0, 0)
+        left_lay.setSpacing(6)
+        list_label = QLabel("Не распознано")
+        list_label.setStyleSheet(f"color:{MUTED}; font-weight:bold; letter-spacing:1px;")
+        left_lay.addWidget(list_label)
+        un_list = QListWidget()
+        un_list.setStyleSheet(
+            f"QListWidget {{ background:rgba(10,8,20,0.6); color:{TEXT}; "
+            f"border:1px solid {BORDER}; border-radius:10px; }}"
+            f"QListWidget::item {{ padding:8px; border-bottom:1px solid {BORDER}; }}"
+            f"QListWidget::item:selected {{ background:#fb923c; color:#0f1115; }}")
+        left_lay.addWidget(un_list, 1)
+        split.addWidget(left)
+
+        right = QWidget()
+        right_lay = QVBoxLayout(right)
+        right_lay.setContentsMargins(0, 0, 0, 0)
+        right_lay.setSpacing(6)
+        detail_label = QLabel("Текст письма")
+        detail_label.setStyleSheet(f"color:{MUTED}; font-weight:bold; letter-spacing:1px;")
+        right_lay.addWidget(detail_label)
+        detail = QTextEdit()
+        detail.setReadOnly(True)
+        detail.setStyleSheet(
+            f"background:rgba(10,8,20,0.6); color:{TEXT}; "
+            f"border:1px solid {BORDER}; border-radius:10px; padding:10px;")
+        detail.setFont(QFont("Segoe UI", 11))
+        right_lay.addWidget(detail, 1)
+        split.addWidget(right)
+        split.setSizes([420, 600])
+
+        self._unmatched_cache = []
+
+        def show_detail(idx):
+            if 0 <= idx < len(self._unmatched_cache):
+                r = self._unmatched_cache[idx]
+                head_txt = (f"FROM: {r['from_email'] or '-'}\n"
+                            f"SUBJECT: {r['subject'] or '-'}\n"
+                            f"Запись #: {r['id']}  (status: {r['status']})\n")
+                body = (r["preview"] or "").strip() or "(пусто)"
+                detail.setText(head_txt + "\n--- текст ---\n" + body)
+
+        def load_unmatched():
+            try:
+                conn = get_conn()
+                rows = conn.execute(
+                    "SELECT id, site_id, from_email, subject, preview, status "
+                    "FROM inbound_unmatched ORDER BY detected_at DESC, id DESC"
+                ).fetchall()
+                conn.close()
+            except Exception:
+                rows = []
+            self._unmatched_cache = [dict(r) for r in rows]
+            un_list.clear()
+            for r in rows:
+                sid = r["site_id"]
+                tag = f"-> #{sid}" if sid else "(не привязано)"
+                item = QListWidgetItem(
+                    f"{r['status'].upper()}  {tag}\n{r['from_email'] or '-'}\n"
+                    f"{r['subject'] or '-'}")
+                un_list.addItem(item)
+            detail.clear()
+            if rows:
+                un_list.setCurrentRow(0)
+                show_detail(0)
+            else:
+                detail.setPlainText("Нет нераспознанных входящих. Всё матчится :)")
+
+        un_list.currentRowChanged.connect(show_detail)
+        load_unmatched()
+
+        link_lay = QHBoxLayout()
+        link_lay.setSpacing(8)
+        link_lbl = QLabel("Привязать к сайту #:")
+        link_lbl.setStyleSheet(f"color:{MUTED};")
+        link_edit = QLineEdit()
+        link_edit.setPlaceholderText("id сайта, напр. 59")
+        link_edit.setStyleSheet(
+            f"background:rgba(10,8,20,0.6); color:{TEXT}; border:1px solid {BORDER}; "
+            f"border-radius:8px; padding:6px;")
+        link_edit.setFixedWidth(120)
+        b_link = QPushButton("🔗 Привязать")
+        b_link.setStyleSheet(
+            f"QPushButton {{ background:#fb923c; color:#0f1115; font-weight:bold; "
+            f"border-radius:8px; padding:8px; }}")
+        b_link_no = QPushButton("❌ Это не ответ (удалить)")
+        b_link_no.setStyleSheet(
+            f"QPushButton {{ background:{PANEL2}; color:{TEXT}; "
+            f"border:1px solid #2c3340; border-radius:8px; padding:8px; }}")
+        link_lay.addWidget(link_lbl)
+        link_lay.addWidget(link_edit)
+        link_lay.addWidget(b_link)
+        link_lay.addStretch(1)
+        link_lay.addWidget(b_link_no)
+        lay.addLayout(link_lay)
+
+        btns = QHBoxLayout()
+        btns.setSpacing(8)
+        b_refresh = QPushButton("🔄 Обновить")
+        b_refresh.setStyleSheet(
+            f"QPushButton {{ background:{PANEL2}; color:{TEXT}; "
+            f"border:1px solid #2c3340; border-radius:8px; padding:8px; }}")
+        b_close = QPushButton("Закрыть")
+        b_close.setStyleSheet(
+            f"QPushButton {{ background:{ACCENT}; color:#0f1115; font-weight:bold; "
+            f"border-radius:8px; padding:8px; }}")
+        btns.addWidget(b_refresh)
+        btns.addStretch(1)
+        btns.addWidget(b_close)
+        lay.addLayout(btns)
+
+        def do_link():
+            idx = un_list.currentRow()
+            if not (0 <= idx < len(self._unmatched_cache)):
+                return
+            r = self._unmatched_cache[idx]
+            try:
+                sid = int(link_edit.text().strip())
+            except ValueError:
+                detail.setPlainText("Введи корректный #id сайта (число).")
+                return
+            ok, out = run_track(["reply", str(sid)])
+            if ok:
+                run_track(["note", str(sid),
+                           f"REPLY::{r['subject'] or ''} | {r['from_email'] or ''} | "
+                           f"{r['preview'] or ''}"])
+                try:
+                    conn = get_conn()
+                    conn.execute(
+                        "UPDATE inbound_unmatched SET site_id=?, status='linked' WHERE id=?",
+                        (sid, r["id"]))
+                    conn.commit()
+                    conn.close()
+                except Exception:
+                    pass
+                self.refresh_all()
+                load_unmatched()
+            else:
+                detail.setPlainText("Ошибка привязки:\n" + out)
+
+        def do_dismiss():
+            idx = un_list.currentRow()
+            if not (0 <= idx < len(self._unmatched_cache)):
+                return
+            r = self._unmatched_cache[idx]
+            try:
+                conn = get_conn()
+                conn.execute(
+                    "UPDATE inbound_unmatched SET status='dismissed' WHERE id=?",
+                    (r["id"],))
+                conn.commit()
+                conn.close()
+            except Exception:
+                pass
+            load_unmatched()
+
+        b_link.clicked.connect(do_link)
+        b_link_no.clicked.connect(do_dismiss)
+        b_refresh.clicked.connect(load_unmatched)
+        b_close.clicked.connect(dlg.accept)
 
         dlg.exec()
 

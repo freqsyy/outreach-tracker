@@ -19,6 +19,48 @@ LOG_PATH = os.path.join(HERE, "gordon_run.log")
 PITFALLS_PATH = os.path.join(HERE, "gordon_pitfalls.md")
 
 EMAIL_RE = re.compile(r"[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}")
+
+# --- Грязные контакты: парсер часто хватает CSS-селекторы/плейсхолдеры вместо
+# реальных email (sprite@x2.png, example@mail.ru, %20don.alfa-k@yandex.ru).
+# Этот фильтр централизован: питает И parser, И scout (оба зовут extract_contacts).
+# После фикса баунс-воронка чистая, deliverability растёт.
+_PLACEHOLDER_DOMAINS = {
+    "example.com", "example.net", "example.org",
+    "test-new-site-12345.by", "localhost", "test.com", "abc.com",
+}
+_PLACEHOLDER_LOCAL = {
+    "example", "test", "demo", "user", "foo", "bar",
+    "noreply", "no-reply", "noreply", "postmaster", "root",
+}
+# мусорные хвосты в домене (картинки/спрайты вместо TLD)
+_IMG_DOMAIN_RE = re.compile(
+    r"\.(png|jpe?g|webp|gif|svg|bmp|ico)$", re.I
+)
+# мусорные куски в локальной части (x2 / 2x / px / .png прямо в ящике)
+_IMG_LOCAL_RE = re.compile(r"(^|[\w.\-+])+(2x|x\d|\dx|\d+px|\.png|\.jpg|\.webp|\.svg)", re.I)
+
+
+def is_valid_email(email):
+    """True только для похожего на реальный контакт email.
+    Отсекает: плейсхолдеры, картинки/спрайты, %20, пробелы, домены-заглушки.
+    Сохраняет легит admin@ / info@ / sales@ и т.п."""
+    e = (email or "").strip().replace("%20", "").strip().lower()
+    if not e or "%20" in e or " " in e:
+        return False
+    if not EMAIL_RE.fullmatch(e):
+        return False
+    local, _, dom = e.rpartition("@")
+    if not local or not dom:
+        return False
+    if dom in _PLACEHOLDER_DOMAINS:
+        return False
+    if local in _PLACEHOLDER_LOCAL:
+        return False
+    if _IMG_DOMAIN_RE.search(dom):
+        return False
+    if _IMG_LOCAL_RE.search(local):
+        return False
+    return True
 TG_RE = re.compile(r"t\.me/([a-zA-Z0-9_]+)|@([a-zA-Z0-9_]{4,32})")
 
 
@@ -87,10 +129,12 @@ def record_pitfall(title, error, cause, solution):
 
 
 def extract_contacts(html):
-    """Из HTML вытаскивает (emails, telegrams)."""
+    """Из HTML вытаскивает (emails, telegrams).
+    Email фильтруются через is_valid_email — отсекаем CSS-мусор/плейсхолдеры."""
     emails = set()
     for m in EMAIL_RE.findall(html):
-        emails.add(m.lower())
+        if is_valid_email(m):
+            emails.add(m.lower())
     tgs = set()
     for m in TG_RE.findall(html):
         handle = m[0] or m[1]
