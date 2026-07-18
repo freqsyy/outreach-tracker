@@ -62,6 +62,14 @@ SCORER = os.path.join(HERE, "agent_scorer.py")
 LETTER_PROOF = os.path.join(HERE, "letter_proof.py")
 FUNNEL = os.path.join(HERE, "funnel_analytics.py")
 PITCHER = os.path.join(HERE, "agent_pitcher.py")
+# --- дозабор агентов (2026-07-18) ---
+AUDITOR = os.path.join(HERE, "agent_auditor.py")
+AUDIT_SITE = os.path.join(HERE, "audit_site.py")
+BOUNCE = os.path.join(HERE, "agent_bounce.py")
+NURTURE = os.path.join(HERE, "agent_nurture.py")
+HERALD = os.path.join(HERE, "agent_herald.py")
+SCOUT_SCORER = os.path.join(HERE, "agent_scout_scorer.py")
+SCOUT_HEATMAP = os.path.join(HERE, "agent_scout_heatmap.py")
 
 # ---------------------------------------------------------------------------
 # Палитра (Неон Cyber)
@@ -831,6 +839,39 @@ class GordonDesktop(QMainWindow):
         ctrl.addWidget(self.btn_letter_proof)
         ctrl.addWidget(self.btn_funnel)
         ctrl.addWidget(self.btn_pitcher)
+        ctrl.addSpacing(8)
+        # --- дозабор агентов (2026-07-18) ---
+        extra_label = QLabel("АГЕНТЫ")
+        extra_label.setStyleSheet(f"color:{MUTED}; font-weight:bold; letter-spacing:1px;")
+        ctrl.addWidget(extra_label)
+        self.btn_auditor = NeonButton("🛡 Аудитор", "#f472b6")
+        self.btn_audit_site = NeonButton("🔎 Аудит сайта", "#f472b6")
+        self.btn_bounce = NeonButton("♻️ Баунсы", "#f59e0b")
+        self.btn_nurture = NeonButton("💌 Nurture", "#38bdf8")
+        self.btn_herald = NeonButton("📡 Herald", "#34d399")
+        self.btn_scout_scorer = NeonButton("🔥 Скаут-скорер", "#fb7185")
+        self.btn_scout_heatmap = NeonButton("🗺 Heatmap", "#a78bfa")
+        self.btn_auditor.setToolTip("agent_auditor: аудит сайта, пишет AUDIT:: баг в notes (мутирует БД).")
+        self.btn_audit_site.setToolTip("audit_site: автономный аудит конкретного сайта (услуга).")
+        self.btn_bounce.setToolTip("agent_bounce: обработка отскоков -> статус bounced (мутирует БД).")
+        self.btn_nurture.setToolTip("agent_nurture: follow-up дрип (--dry по умолчанию, БД не трогает).")
+        self.btn_herald.setToolTip("agent_herald: генерация соц-черновиков (--dry-run, НЕ постит).")
+        self.btn_scout_scorer.setToolTip("agent_scout_scorer: ранжирование review-лидов (read-only).")
+        self.btn_scout_heatmap.setToolTip("agent_scout_heatmap: тепловая карта review-лидов (read-only).")
+        self.btn_auditor.clicked.connect(self.run_auditor)
+        self.btn_audit_site.clicked.connect(self.run_audit_site)
+        self.btn_bounce.clicked.connect(self.run_bounce)
+        self.btn_nurture.clicked.connect(self.run_nurture)
+        self.btn_herald.clicked.connect(self.run_herald)
+        self.btn_scout_scorer.clicked.connect(self.run_scout_scorer)
+        self.btn_scout_heatmap.clicked.connect(self.run_scout_heatmap)
+        ctrl.addWidget(self.btn_auditor)
+        ctrl.addWidget(self.btn_audit_site)
+        ctrl.addWidget(self.btn_bounce)
+        ctrl.addWidget(self.btn_nurture)
+        ctrl.addWidget(self.btn_herald)
+        ctrl.addWidget(self.btn_scout_scorer)
+        ctrl.addWidget(self.btn_scout_heatmap)
         ctrl.addStretch(1)
         mid.addWidget(ctrl_frame)
 
@@ -1126,6 +1167,13 @@ class GordonDesktop(QMainWindow):
         self.btn_letter_proof.setEnabled(True)
         self.btn_funnel.setEnabled(True)
         self.btn_pitcher.setEnabled(True)
+        self.btn_auditor.setEnabled(True)
+        self.btn_audit_site.setEnabled(True)
+        self.btn_bounce.setEnabled(True)
+        self.btn_nurture.setEnabled(True)
+        self.btn_herald.setEnabled(True)
+        self.btn_scout_scorer.setEnabled(True)
+        self.btn_scout_heatmap.setEnabled(True)
         # перечитываем всё по горячим следам
         self.refresh_all()
 
@@ -1228,6 +1276,85 @@ class GordonDesktop(QMainWindow):
         self._lock_funnel_buttons()
         self.append_log("[APP] 🤝 Питчер запущен (dry-run) ↓")
 
+    # --- дозабор агентов (2026-07-18) ---
+
+    def run_auditor(self):
+        """agent_auditor: аудит сайта, пишет AUDIT:: баг в notes (мутирует БД)."""
+        if self._busy_guard_funnel("Аудитор"):
+            return
+        self.runner = GordonRunner(AUDITOR, "Аудитор сайта", [])
+        self.runner.log_line.connect(self.append_log)
+        self.runner.finished.connect(self.on_runner_finished)
+        self.runner.start()
+        self._lock_funnel_buttons()
+        self.append_log("[APP] 🛡 Аудитор запущен (пишет баг в notes) ↓")
+
+    def run_audit_site(self):
+        """audit_site: автономный аудит конкретного сайта (услуга)."""
+        if self._busy_guard_funnel("Аудит сайта"):
+            return
+        self.runner = GordonRunner(AUDIT_SITE, "Аудит сайта (услуга)", [])
+        self.runner.log_line.connect(self.append_log)
+        self.runner.finished.connect(self.on_runner_finished)
+        self.runner.start()
+        self._lock_funnel_buttons()
+        self.append_log("[APP] 🔎 Аудит сайта запущен ↓")
+
+    def run_bounce(self):
+        """agent_bounce: обработка отскоков -> статус bounced (мутирует БД)."""
+        if self._busy_guard_funnel("Баунсы"):
+            return
+        self.runner = GordonRunner(BOUNCE, "Обработка баунсов", [])
+        self.runner.log_line.connect(self.append_log)
+        self.runner.finished.connect(self.on_runner_finished)
+        self.runner.start()
+        self._lock_funnel_buttons()
+        self.append_log("[APP] ♻️ Баунсы запущены (мутирует БД) ↓")
+
+    def run_nurture(self):
+        """agent_nurture: follow-up дрип (--dry по умолчанию, БД не трогает)."""
+        if self._busy_guard_funnel("Nurture"):
+            return
+        self.runner = GordonRunner(NURTURE, "Nurture follow-up (dry)", ["--dry"])
+        self.runner.log_line.connect(self.append_log)
+        self.runner.finished.connect(self.on_runner_finished)
+        self.runner.start()
+        self._lock_funnel_buttons()
+        self.append_log("[APP] 💌 Nurture запущен (--dry, БД не тронута) ↓")
+
+    def run_herald(self):
+        """agent_herald: генерация соц-черновиков (--dry-run, НЕ постит)."""
+        if self._busy_guard_funnel("Herald"):
+            return
+        self.runner = GordonRunner(HERALD, "Herald (черновики)", ["--dry-run"])
+        self.runner.log_line.connect(self.append_log)
+        self.runner.finished.connect(self.on_runner_finished)
+        self.runner.start()
+        self._lock_funnel_buttons()
+        self.append_log("[APP] 📡 Herald запущен (--dry-run, не постит) ↓")
+
+    def run_scout_scorer(self):
+        """agent_scout_scorer: ранжирование review-лидов (read-only)."""
+        if self._busy_guard_funnel("Скаут-скорер"):
+            return
+        self.runner = GordonRunner(SCOUT_SCORER, "Скаут-скорер (review)", [])
+        self.runner.log_line.connect(self.append_log)
+        self.runner.finished.connect(self.on_runner_finished)
+        self.runner.start()
+        self._lock_funnel_buttons()
+        self.append_log("[APP] 🔥 Скаут-скорер запущен (read-only) ↓")
+
+    def run_scout_heatmap(self):
+        """agent_scout_heatmap: тепловая карта review-лидов (read-only)."""
+        if self._busy_guard_funnel("Heatmap"):
+            return
+        self.runner = GordonRunner(SCOUT_HEATMAP, "Heatmap review-лидов", [])
+        self.runner.log_line.connect(self.append_log)
+        self.runner.finished.connect(self.on_runner_finished)
+        self.runner.start()
+        self._lock_funnel_buttons()
+        self.append_log("[APP] 🗺 Heatmap запущена (read-only) ↓")
+
     def _lock_funnel_buttons(self):
         self.btn_start.setEnabled(False)
         self.btn_force.setEnabled(False)
@@ -1238,6 +1365,13 @@ class GordonDesktop(QMainWindow):
         self.btn_letter_proof.setEnabled(False)
         self.btn_funnel.setEnabled(False)
         self.btn_pitcher.setEnabled(False)
+        self.btn_auditor.setEnabled(False)
+        self.btn_audit_site.setEnabled(False)
+        self.btn_bounce.setEnabled(False)
+        self.btn_nurture.setEnabled(False)
+        self.btn_herald.setEnabled(False)
+        self.btn_scout_scorer.setEnabled(False)
+        self.btn_scout_heatmap.setEnabled(False)
         self.btn_stop.setEnabled(True)
 
     def _sources_already_in_db(self):
