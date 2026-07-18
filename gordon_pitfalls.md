@@ -19,3 +19,9 @@
 - Причина: blok/nekorrektnyy parol/limit akkaunta
 - Решение: proverit APP_PASSWORD, rotirovat akkaunt, umenshit MAX_PER_DAY
 - Замечено: 2026-07-09 21:44
+
+## Recorder: oshibka IMAP
+- Ошибка: 
+- Причина: IMAP vyklyuchen v akkaunte / nevernyy app-password / blok
+- Решение: vklyuchit IMAP v nastroykah Gmail, proverit APP_PASSWORD
+- Замечено: 2026-07-16 02:30

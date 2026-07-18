@@ -105,7 +105,7 @@ def main():
         acc = accounts[acc_i % len(accounts)]
         gc.log(f"Otpravka #{row['id']} -> {row['email']} cherez {acc[0]}", "SEND_NOW")
         try:
-            s.send_one(acc, row["email"], settings, subject, body, row["url"])
+            s.send_one(acc, row["email"], settings, subject, body, row["url"], row["notes"] or "")
             s.mark_sent(row["id"])
             sent += 1
             acc_i = (acc_i + 1) % len(accounts)

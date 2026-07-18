@@ -50,13 +50,13 @@ CASE_TEXT = ""
 # Status -> scenario key (must match nurture_library.txt СЦЕНАРИЙ keys).
 STATUS_TO_SEQ = {
     "pending": "v1",
-    "replied": "v3",
     "bounced": "bounce",
     "rejected": "rej",
 }
 # Leads we never touch here.
 # review = auto-scout, NOT approved for outreach yet (CLAUDE.md) -> skipped.
 # sent = cold blast already in flight under a different agent -> skipped.
+# replied = ТЗ Назара 2026-07-17: ответил = больше НЕ пишем вообще -> skipped.
 # hired = handed off to Relay/Atlas -> skipped.
 SKIP_STATUSES = {"sent", "hired", "review"}
 

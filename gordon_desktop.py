@@ -1415,8 +1415,24 @@ class GordonDesktop(QMainWindow):
                 r = self._replies_cache[idx]
                 head = (f"ID: {r['id']}\nURL: {r['url'] or '-'}\n"
                         f"Email: {r['email'] or '-'}\nСтатус: {r['status']}\n")
-                notes = _decode_mime((r["notes"] or "").strip())
-                body = notes if notes else "(пусто - текст ответа не сохранён)"
+                # показываем ТОЛЬКО реальные ответы (строки REPLY::), чисто и без дублей
+                replies = []
+                for line in (r["notes"] or "").splitlines():
+                    line = line.strip()
+                    if not line.startswith("REPLY::"):
+                        continue
+                    parts = line[len("REPLY::"):].split(" | ", 2)
+                    subj = _decode_mime(parts[0].strip()) if parts else ""
+                    frm = parts[1].strip() if len(parts) > 1 else ""
+                    text = parts[2].strip() if len(parts) > 2 else ""
+                    block = f"▸ {subj}" + (f"  (от {frm})" if frm else "")
+                    if text:
+                        block += f"\n{text}"
+                    replies.append(block)
+                if replies:
+                    body = "\n\n".join(replies)
+                else:
+                    body = "(пусто - текст ответа не сохранён)"
                 detail.setText(head + "\n--- текст ответа ---\n" + body)
 
         def load_replies():
