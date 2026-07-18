@@ -64,10 +64,9 @@ def cdp_alive():
         with socket.create_connection(("127.0.0.1", int(CDP_PORT)), timeout=2):
             return True
     except Exception:
-        pass
-    # запасной вариант — если порт открыт, но socket не сработал, спросим браузер
-    out = _run(["get", "url"], timeout=10)
-    return bool(out.strip())
+        # порт закрыт — Хром не поднят. НЕ дёргаем браузер (виснет): возвращаем
+        # False сразу, вызывающий корректно выйдет (аудит пропущен).
+        return False
 
 
 # --- Авто-подъём Chromium (чтобы прогон не обрывался, если порт умер) ---

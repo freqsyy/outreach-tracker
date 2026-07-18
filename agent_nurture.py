@@ -125,8 +125,9 @@ def domain_of(url):
 # Схема nurture_state (idempotent). Пишем в БД ТОЛЬКО при реальной отправке.
 # ----------------------------------------------------------------------------
 def ensure_schema(allow_write=False):
-    if not allow_write:
-        return  # DRY / STOP: read-only, не трогаем БД
+    # Таблица создаётся idempotent-но ВСЕГДА (пустая таблица = read-only,
+    # данные лидов не мутируются). Реальная запись строк идёт только под
+    # allow_write в persist_state. Без этого --dry падает на load_state_rows.
     conn = gc.get_conn()
     try:
         conn.execute(

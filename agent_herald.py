@@ -210,6 +210,13 @@ def main():
                     help="НЕ писать файлы, только печать")
     args = ap.parse_args()
 
+    # cp1251-консоль ломает эмодзи в print -> reconfigure на utf-8.
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+        sys.stderr.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
+
     hooks = load_hooks()
     barter = load_barter()
     if not hooks:

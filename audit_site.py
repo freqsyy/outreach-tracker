@@ -18,6 +18,7 @@ Standalone-инструмент: прогоняет сайт через audit_en
 import os
 import sys
 import time
+import sqlite3
 from datetime import datetime
 
 import audit_engine as ae
@@ -25,6 +26,23 @@ import audit_engine as ae
 HERE = os.path.dirname(os.path.abspath(__file__))
 AUDITS_DIR = os.path.join(HERE, "audits")
 TEMPLATE_PATH = os.path.join(HERE, "report_template.md")
+DB_PATH = os.path.join(HERE, "outreach.db")
+
+
+def _default_url_from_db():
+    """Первый pending-сайт из БД для дефолтного прогона (кнопка дашборда)."""
+    if not os.path.exists(DB_PATH):
+        return None
+    try:
+        conn = sqlite3.connect(DB_PATH)
+        row = conn.execute(
+            "SELECT url FROM sites WHERE status='pending' AND url IS NOT NULL "
+            "ORDER BY id LIMIT 1"
+        ).fetchone()
+        conn.close()
+        return row[0] if row else None
+    except Exception:
+        return None
 
 
 def load_template():
@@ -102,9 +120,15 @@ def letter_pitch(result):
 
 def main():
     if len(sys.argv) < 2:
-        print("Usage: python audit_site.py https://example.com [--contact email]")
-        sys.exit(1)
-    url = sys.argv[1]
+        # дефолт: первый pending-сайт из БД (чтобы кнопка в дашборде работала
+        # без аргументов). Без БД/сайтов — usage.
+        url = _default_url_from_db()
+        if not url:
+            print("Usage: python audit_site.py https://example.com [--contact email]")
+            sys.exit(1)
+        print(f"[*] URL не задан — берём первый pending из БД: {url}")
+    else:
+        url = sys.argv[1]
     contact = ""
     if "--contact" in sys.argv:
         idx = sys.argv.index("--contact")
