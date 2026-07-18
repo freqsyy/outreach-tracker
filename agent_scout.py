@@ -613,7 +613,7 @@ def write_report(leads, hot_threshold):
             f.write("\n".join(lines))
         gc.log(f"Otchet zapisan: {REPORT_PATH} ({len(leads)} lidov)", "SCOUT")
     except Exception as e:
-        gc.log(f"Ne udalos zapisat otchet: {e}", "SCOUT")
+        gc.log(f"Не удалось записать отчёт: {e}", "SCOUT")
 
 
 # ---------------------------------------------------------------------------

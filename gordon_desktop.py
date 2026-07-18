@@ -433,11 +433,14 @@ class GordonRunner(QThread):
                 cwd=HERE, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
                 text=True, encoding="utf-8", errors="replace", bufsize=1,
             )
-            # читаем stdout построчно; сам лог Гордона идёт в ленту через tail файла,
-            # здесь только служебно отмечаем старт/завершение (без дублей в ленте)
-            for _ in self._proc.stdout:
+            # читаем stdout построчно и прокидываем в ленту, чтобы результат
+            # агента (таблица скора / воронка / pitch-черновики / proof) был виден.
+            # Агенты scorer/proof/funnel/pitcher не пишут в лог-файл, поэтому их
+            # вывод иначе теряется (видно только "запущен"/"завершён").
+            for line in self._proc.stdout:
                 if self._stop:
                     break
+                self.log_line.emit(line.rstrip("\n"))
             self._proc.wait()
             code = self._proc.returncode
             self.log_line.emit(f"[APP] {self.label} завершён, код {code}")

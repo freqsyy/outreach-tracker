@@ -175,7 +175,7 @@ def _parse_blocks(path):
         if subject is not None:
             out.append((subject, "\n".join(body_lines).strip()))
     except Exception as e:
-        gc.log(f"Ne udalos prochitat {os.path.basename(path)}: {e}", "NURTURE")
+        gc.log(f"Не удалось прочитать {os.path.basename(path)}: {e}", "NURTURE")
     return out
 
 
