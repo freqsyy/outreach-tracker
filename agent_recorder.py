@@ -396,92 +396,123 @@ def scan_inbox_for_replies(email_addr, password, msg_map, email_map, domain_map,
     unmatched = []
     own_addrs = {a[0].lower() for a in accounts}
     try:
-        socket.setdefaulttimeout(30)
+        # ТАЙМАУТ 120с (было 30): fetch полных RFC822 из [Gmail]/All Mail
+        # (150+ писем) реально занимает >30с через FCC-прокси -> socket.timeout
+        # ловился внешним except и обнулял ВЕСЬ скан аккаунта (теряли ответы,
+        # напр. mar-1002@mail.ru в All Mail ndnd***).
+        socket.setdefaulttimeout(120)
         m = imaplib.IMAP4_SSL("imap.gmail.com", 993)
         m.login(email_addr, password)
         boxes = list_mailboxes(m)
-        # Сканируем ТОЛЬКО папки-получатели: INBOX, Спам (\Junk), Вся почта (\All).
-        # НЕ трогаем Sent/черновики/корзину - там нет входящих ответов.
-        # \All покрывает и forwarded-копии (они дублируются в "Вся почта").
+        # Сканируем папки-получатели: INBOX, Вся почта (\All), Спам (\Junk),
+        # Важное (Important). НЕ трогаем Sent/черновики/корзину - там нет
+        # входящих ответов. \All покрывает и forwarded-копии и письма, которые
+        # Gmail вынес из INBOX в "Вся почта" (реальный кейс: mar-1002@mail.ru
+        # ответила на ndnd***, Gmail убрал из INBOX -> рекордер терял ответ).
+        # ВАЖНО: Gmail шлёт флаги в ДВУХ форматах - с обратным слэшем
+        # (\\All) и БЕЗ (All). Нормализуем, иначе All Mail/Spam не попадают
+        # в выборку на аккаунтах без слэша -> теряем ответы.
         scan = []
         for name, info in boxes.items():
-            flags = " ".join(info.get("flags", []))
-            if "\\Sent" in flags or "Отправленные" in name:
+            raw_flags = " ".join(info.get("flags", []))
+            # нормализуем: убираем слэш, приводим к верхнему регистру
+            norm_flags = {f.upper().lstrip("\\") for f in raw_flags.split()}
+            low_name = name.lower()
+            is_sent = ("SENT" in norm_flags
+                       or "отправленные" in low_name
+                       or "sent" in low_name)
+            is_drafts = ("DRAFTS" in norm_flags
+                         or "черновики" in low_name
+                         or "draft" in low_name)
+            is_trash = ("TRASH" in norm_flags
+                        or "корзина" in low_name
+                        or "trash" in low_name)
+            if is_sent or is_drafts or is_trash:
                 continue
-            if name.upper() == "INBOX" or "\\Junk" in flags or "\\All" in flags:
+            is_inbox = (name.upper() == "INBOX" or "inbox" in low_name)
+            is_recv = (is_inbox
+                       or "ALL" in norm_flags
+                       or "JUNK" in norm_flags
+                       or "IMPORTANT" in norm_flags)
+            if is_recv:
                 scan.append(info["orig"])
         scan = list(dict.fromkeys(scan)) or ["INBOX"]
         since = (datetime.now() - timedelta(days=lookback_days)).strftime("%d-%b-%Y")
         for box in scan:
             try:
                 if not _safe_select(m, box):
+                    gc.log(f"Inbox-scan: ne udalos vybrat papku {box} (ak {email_addr})", "RECORDER")
                     continue
-            except Exception:
-                continue
-            typ, data = m.search(None, "SINCE", since)
-            if typ != "OK" or not data or not data[0]:
-                continue
-            nums = data[0].split()
-            for i in range(0, len(nums), 50):
-                chunk = nums[i:i + 50]
-                start = int(chunk[0]); end = int(chunk[-1])
-                typ, msg_data = m.fetch(f"{start}:{end}", "(RFC822)")
-                if typ != "OK" or not msg_data:
+                typ, data = m.search(None, "SINCE", since)
+                if typ != "OK" or not data or not data[0]:
                     continue
-                for item in msg_data:
-                    if not isinstance(item, tuple) or not isinstance(item[1], bytes):
+                nums = data[0].split()
+                for i in range(0, len(nums), 50):
+                    chunk = nums[i:i + 50]
+                    start = int(chunk[0]); end = int(chunk[-1])
+                    typ, msg_data = m.fetch(f"{start}:{end}", "(RFC822)")
+                    if typ != "OK" or not msg_data:
                         continue
-                    msg = email_lib.message_from_bytes(item[1])
-                from_email = extract_emails(msg.get("From", ""))
-                from_email = from_email[0] if from_email else ""
-                # пропускаем собственные аккаунты (наши же письма в "Вся почта")
-                if from_email in own_addrs:
-                    continue
-                if _is_system_junk(from_email):
-                    continue
-                subject = _decode_header(msg.get("Subject", ""))
-                # --- цепочка: In-Reply-To + References ---
-                refs = []
-                irt = msg.get("In-Reply-To")
-                if irt:
-                    refs += re.findall(r"<([^>]+)>", irt)
-                refs_field = msg.get("References")
-                if refs_field:
-                    refs += re.findall(r"<([^>]+)>", refs_field)
-                refs_lower = [r.strip().lower() for r in refs]
-                sid = None
-                for r in refs_lower:
-                    if r in msg_map:
-                        sid = msg_map[r]
-                        break
-                # --- Delivered-To: на какой из наших акков доставлено ---
-                if sid is None:
-                    for dt in extract_emails(msg.get_all("Delivered-To", [])):
-                        dt = dt.strip().lower()
-                        if dt in own_addrs and dt in email_map:
-                            # ищем site_id по To: акка, на который пришло
-                            for cand in email_map.get(dt, []):
-                                sid = cand
+                    for item in msg_data:
+                        if not isinstance(item, tuple) or not isinstance(item[1], bytes):
+                            continue
+                        msg = email_lib.message_from_bytes(item[1])
+                        from_email = extract_emails(msg.get("From", ""))
+                        from_email = from_email[0] if from_email else ""
+                        # пропускаем собственные аккаунты (наши же письма в "Вся почта")
+                        if from_email in own_addrs:
+                            continue
+                        if _is_system_junk(from_email):
+                            continue
+                        subject = _decode_header(msg.get("Subject", ""))
+                        # --- цепочка: In-Reply-To + References ---
+                        refs = []
+                        irt = msg.get("In-Reply-To")
+                        if irt:
+                            refs += re.findall(r"<([^>]+)>", irt)
+                        refs_field = msg.get("References")
+                        if refs_field:
+                            refs += re.findall(r"<([^>]+)>", refs_field)
+                        refs_lower = [r.strip().lower() for r in refs]
+                        sid = None
+                        for r in refs_lower:
+                            if r in msg_map:
+                                sid = msg_map[r]
                                 break
-                        if sid is not None:
-                            break
-                # --- мягкий домен ---
-                if sid is None:
-                    fdom = _domain_of(from_email)
-                    for sdom, sids in domain_map.items():
-                        if _soft_domain_match(fdom, sdom):
-                            sid = sids[0]
-                            break
-                # --- topic-hit по названию сайта в теме/теле ---
-                if sid is None:
-                    body = _extract_preview(msg)
-                    sid = _topic_hit(subject + " " + body, name_map)
-                if sid is None:
-                    preview = _extract_preview(msg)
-                    unmatched.append((from_email, subject, preview))
-                    continue
-                preview = _extract_preview(msg)
-                matched.append((sid, subject, preview, from_email))
+                        # --- Delivered-To: на какой из наших акков доставлено ---
+                        if sid is None:
+                            for dt in extract_emails(msg.get_all("Delivered-To", [])):
+                                dt = dt.strip().lower()
+                                if dt in own_addrs and dt in email_map:
+                                    # ищем site_id по To: акка, на который пришло
+                                    for cand in email_map.get(dt, []):
+                                        sid = cand
+                                        break
+                                if sid is not None:
+                                    break
+                        # --- мягкий домен ---
+                        if sid is None:
+                            fdom = _domain_of(from_email)
+                            for sdom, sids in domain_map.items():
+                                if _soft_domain_match(fdom, sdom):
+                                    sid = sids[0]
+                                    break
+                        # --- topic-hit по названию сайта в теме/теле ---
+                        if sid is None:
+                            body = _extract_preview(msg)
+                            sid = _topic_hit(subject + " " + body, name_map)
+                        if sid is None:
+                            preview = _extract_preview(msg)
+                            unmatched.append((from_email, subject, preview))
+                            continue
+                        preview = _extract_preview(msg)
+                        matched.append((sid, subject, preview, from_email))
+            except Exception as e:
+                # Падение ОДНОЙ папки/письма не должно убивать весь скан
+                # аккаунта (было: socket.timeout на All Mail -> теряли все
+                # ответы этого аккаунта). Логируем и идём дальше.
+                gc.log(f"Inbox-scan: oshibka v papke {box} (ak {email_addr}): {e}", "RECORDER")
+                continue
         m.logout()
     except Exception as e:
         gc.log(f"Inbox-scan oshibka dlya {email_addr}: {e}", "RECORDER")
@@ -692,9 +723,13 @@ def main():
             found.add(sid)
             subj_d = _safe_text(subject).strip()
             prev = preview.strip()
+            # Мусор-маркеры ищем И в теме, И в теле (webpay-письма держат
+            # "WEBPAY support message" в subject, а тело чистое -> иначе
+            # мусор проскакивал в replied, затирая реальный статус сайта).
             junk_markers = ("webpay support message", "payment", "transaction receipt")
-            if prev and any(mk in prev.lower() for mk in junk_markers):
-                gc.log(f"PROPUSK musora po #{sid}: '{prev[:60]}'", "RECORDER")
+            hay = (subj_d + " " + prev).lower()
+            if any(mk in hay for mk in junk_markers):
+                gc.log(f"PROPUSK musora po #{sid}: '{subj_d[:60]}'", "RECORDER")
                 continue
             existing = _existing_reply_fingerprints(sid)
             if (subj_d, prev) in existing:

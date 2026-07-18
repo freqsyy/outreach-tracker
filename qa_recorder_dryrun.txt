@@ -1,0 +1,12 @@
+[2026-07-18 13:57:13] [RECORDER] Net ruchnyh otvetov (gordon_responses.txt pust).
+[2026-07-18 13:57:13] [RECORDER] IMAP- pollling VKLYUCHEN. Proveryaem otvety po cepochke pisem...
+[2026-07-18 13:57:14] [RECORDER] Sent-box dlya romanjeyaleksej@gmail.com: [Gmail]/&BB4EQgQ,BEAEMAQyBDsENQQ9BD0ESwQ1-
+[2026-07-18 13:57:16] [RECORDER] Sent-box dlya ndndnsnsndnsn2@gmail.com: [Gmail]/Sent Mail
+[2026-07-18 13:57:17] [RECORDER] Sent-box dlya qhqh0457@gmail.com: [Gmail]/Sent Mail
+[2026-07-18 13:57:20] [RECORDER] Sent-box dlya ususysjq@gmail.com: [Gmail]/Sent Mail
+[2026-07-18 13:57:22] [RECORDER] Sent-box dlya jzkapkfyshbefhuagkdwksdjs@gmail.com: [Gmail]/Sent Mail
+[2026-07-18 13:57:23] [RECORDER] Sent-map postroena: 455 nashih pisem s Message-ID.
+[2026-07-18 13:57:26] [RECORDER] DUPL otveta po #124 propuschen (uzhe est).
+[2026-07-18 13:57:41] [RECORDER] IMAP: otmecheno replied: [124]
+[2026-07-18 13:57:41] [RECORDER] [DRY-RUN] matched=1 unmatched_vhodyaschih=0 (budet dobavleno v inbound_unmatched: 0). ZAPIS NE PROIZVEDENA.
+DONE exit=0

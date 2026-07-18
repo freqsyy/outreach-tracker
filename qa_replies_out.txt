@@ -1,0 +1,21 @@
+=== QA: опрос 5 ящиков за 30 дней ===
+[*] опрос roma*** ...
+    найдено Re:-писем: 231
+[*] опрос ndnd*** ...
+    найдено Re:-писем: 212
+[*] опрос qhqh*** ...
+    найдено Re:-писем: 209
+[*] опрос usus*** ...
+    найдено Re:-писем: 193
+[*] опрос jzka*** ...
+    найдено Re:-писем: 193
+
+=== ИТОГО матчнутых к сайтам: 2 ===
+  #5 https://kavachay.by/  status=rejected  *** ПРОПУЩЕНО ***
+      from=manager@kavachay.by  subj='Re: Тестирование сайта kavachay.by'
+  #6 https://roast.by/  status=replied  OK(replied)
+      from=info@roast.by  subj='Re: ваш roast.by'
+
+=== ДЫРА (ответили, но НЕ в replied): 1 ===
+  #5 https://kavachay.by/ from=manager@kavachay.by :: Re: Тестирование сайта kavachay.by
+DONE exit=0
