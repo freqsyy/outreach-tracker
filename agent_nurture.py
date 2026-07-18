@@ -268,16 +268,19 @@ def classify_objection(text):
 def candidate_leads(stop_active, include_pending):
     conn = get_ro_conn()
     rows = conn.execute(
-        "SELECT * FROM sites WHERE status IN ('sent','replied','bounced','review','pending')"
+        # replied ИСКЛЮЧЁН: отправили -> ответили -> стоп дозасылке (ТЗ 2026-07-18).
+        # Не ответили (sent/bounced) -> цепочка follow-up идёт до конца.
+        "SELECT * FROM sites WHERE status IN ('sent','bounced','review','pending')"
     ).fetchall()
     conn.close()
     out = []
     for r in rows:
         st = r["status"]
-        # sent/replied/bounced -> follow-up цепочки (Назар разрешил follow-up и на
-        # 162 холодных sent — аппрув 2026-07-15). review НЕ трогаем (не аппрувнуты
+        # sent/bounced -> follow-up цепочки (Назар разрешил follow-up и на
+        # 162 холодных sent — аппрув 2026-07-15). replied ИСКЛЮЧЁН: ответил ->
+        # стоп дозасылке (ТЗ 2026-07-18). review НЕ трогаем (не аппрувнуты
         # к рассылке по CLAUDE.md), pending -> только если явно include_pending.
-        if st in ("sent", "replied", "bounced"):
+        if st in ("sent", "bounced"):
             if (r["email"] or "").strip():
                 out.append(r)
         elif st == "pending" and include_pending and not stop_active:
