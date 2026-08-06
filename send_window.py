@@ -10,6 +10,7 @@ get_accounts(), load_letter(). Растягивает отправку равн�
 """
 import os
 import random
+import re
 import sys
 import time
 
@@ -18,6 +19,32 @@ import agent_sender as s
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 STATE_PATH = os.path.join(HERE, "gordon_send_state.json")
+
+# v0.6 (2026-08-02): мусорные/подозрительные адреса, которые НЕ шлём.
+# 209 - телефон вместо адреса (84956019435@mail.ru)
+# 214 - заглушка (exapmle@armyfit.ru)
+# 222 - домен письма (useallowance.com) не совпадает с сайтом (useallowanceai.com)
+BLOCK_IDS = {209, 214, 222}
+
+# Честный оффер для сайтов БЕЗ найденного бага: никаких обещаний
+# «нашёл недочёт» с пустым примером. Только предложение сотрудничества.
+OFFER_SUBJECT = "Предложение по тестированию {site}"
+OFFER_BODY = (
+    "Здравствуйте! Меня зовут Назар, я занимаюсь ручным тестированием сайтов.\n"
+    "\n"
+    "Могу пройтись по всему {site} целиком, составить отчёт с багами и "
+    "вариантами исправления и помочь их закрыть. То есть не просто "
+    "«вот что не так», а «вот как сделать, чтобы заработало».\n"
+    "\n"
+    "Предлагаю сотрудничество: прогоняю сайт, показываю находки на живом "
+    "примере вашего проекта, и если зайдёт - беру аудит и дальше на себя. "
+    "Условия и цену обсудим в личке, без наездов.\n"
+    "\n"
+    "Мой Telegram: @oojdo - там быстрее отвечаю.\n"
+    "\n"
+    "С уважением,\n"
+    "Назар"
+)
 
 
 def load_state():
@@ -82,10 +109,27 @@ def main():
     for row in pending:
         if sent >= total:
             break
+        # пропуск мусорных/невалидных адресов (см. BLOCK_IDS выше)
+        email = (row["email"] or "").strip()
+        if row["id"] in BLOCK_IDS or not re.match(r"[^@\s]+@[^@\s]+\.[^@\s]+$", email):
+            gc.log(f"PROPUSK #{row['id']} (musornyj/nevalidnyj email: {email})", "WINDOW")
+            continue
+        notes = row["notes"] or ""
+        # v0.6: есть реальный AUDIT-баг -> уникальное письмо с багом (крючок);
+        # нет бага -> честный оффер БЕЗ обещания бага (никаких пустых {bug}).
+        composed = gc.compose_unique_letter(row["url"], notes, row["tags"] or "")
+        if composed:
+            _subject, _body = composed
+        else:
+            _subject, _body = OFFER_SUBJECT, OFFER_BODY
         acc = accounts[acc_i % len(accounts)]
-        gc.log(f"Otpravka #{row['id']} -> {row['email']} cherez {acc[0]}", "WINDOW")
+        gc.log(
+            f"Otpravka #{row['id']} -> {email} cherez {acc[0]} "
+            f"({'BUG' if composed else 'OFFER'})",
+            "WINDOW",
+        )
         try:
-            s.send_one(acc, row["email"], settings, subject, body, row["url"])
+            s.send_one(acc, email, settings, _subject, _body, row["url"], notes)
             s.mark_sent(row["id"])
             sent += 1
             acc_i += 1
